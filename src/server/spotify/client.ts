@@ -64,10 +64,10 @@ export async function getAllPlaylists(accessToken: string) {
   let nextUrl: string | null = "/me/playlists?limit=50";
 
   while (nextUrl) {
-    const page = await spotifyFetch<{
+    const page: {
       items: SpotifyPlaylistSummary[];
       next: string | null;
-    }>(accessToken, nextUrl);
+    } = await spotifyFetch(accessToken, nextUrl);
 
     playlists.push(...page.items);
     nextUrl = page.next;
@@ -85,7 +85,7 @@ export async function getPlaylistTracks(
     `/playlists/${playlistId}/tracks?limit=100&fields=items(track(id,name,type,is_local)),next`;
 
   while (nextUrl) {
-    const page = await spotifyFetch<{
+    const page: {
       items: Array<{
         track: {
           id: string | null;
@@ -95,12 +95,16 @@ export async function getPlaylistTracks(
         } | null;
       }>;
       next: string | null;
-    }>(accessToken, nextUrl);
+    } = await spotifyFetch(accessToken, nextUrl);
 
     for (const item of page.items) {
       const track = item.track;
 
-      if (!track || track.type !== "track" || track.is_local || !track.id) {
+      if (
+        track?.type !== "track" ||
+        track?.is_local ||
+        !track?.id
+      ) {
         continue;
       }
 

@@ -84,3 +84,13 @@ body {
     hsl(var(--background) / 0.98)
   );
 }
+
+@keyframes progress-pan {
+  0% {
+    background-position: 0% 50%;
+  }
+
+  100% {
+    background-position: 200% 50%;
+  }
+}

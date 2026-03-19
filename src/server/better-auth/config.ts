@@ -5,9 +5,10 @@ import { env } from "~/env";
 import { db } from "~/server/db";
 
 export const auth = betterAuth({
+  baseURL: env.BETTER_AUTH_URL ?? "http://localhost:3000",
   database: drizzleAdapter(db, {
     provider: "pg",
-  },
+  }),
   socialProviders: {
     spotify: {
       clientId: env.BETTER_AUTH_SPOTIFY_CLIENT_ID,

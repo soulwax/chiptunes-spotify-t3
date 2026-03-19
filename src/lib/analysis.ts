@@ -12,15 +12,6 @@ const NOTE_NAMES = [
   "Bb",
   "B",
 ] as const;
-const BPM_BUCKETS = [
-  "ambient",
-  "exploration",
-  "adventure",
-  "action",
-  "chase",
-  "boss",
-] as const;
-const ERAS = ["NES", "SNES", "Genesis"] as const;
 const MAJOR_SCALE = [0, 2, 4, 5, 7, 9, 11] as const;
 const MINOR_SCALE = [0, 2, 3, 5, 7, 8, 10] as const;
 
@@ -254,8 +245,14 @@ const CHORD_DESCRIPTIONS: Record<string, string> = {
   "iii–IV–I–V": "Dreamier major color for reflective exploration and credits energy.",
 };
 
-export type ChipmapBpmBucket = (typeof BPM_BUCKETS)[number];
-export type ChipmapEra = (typeof ERAS)[number];
+export type ChipmapBpmBucket =
+  | "ambient"
+  | "exploration"
+  | "adventure"
+  | "action"
+  | "chase"
+  | "boss";
+export type ChipmapEra = "NES" | "SNES" | "Genesis";
 
 export interface ChipmapTrackInput {
   id: string;
@@ -402,7 +399,7 @@ export function analyzeFeatures(
     clusters: buildClusters(pairs, aggregates.tempo.median, topKey.label, era),
     chordPalette: buildChordPalette(topKey, bpmBucket),
     drumPattern: buildDrumPattern(bpmBucket),
-    soundDesignReference: SOUND_DESIGN_REFERENCE[era],
+    soundDesignReference: [...SOUND_DESIGN_REFERENCE[era]],
   };
 }
 
@@ -479,7 +476,8 @@ function buildKeyHistogram(features: ChipmapAudioFeature[]) {
   return [...counter.entries()]
     .map(([bucketKey, count]) => {
       const [key, mode] = bucketKey.split(":").map(Number);
-      return createKeyEntry(key ?? 0, (mode === 0 ? 0 : 1) as 0 | 1, count);
+      const normalizedMode: 0 | 1 = mode === 0 ? 0 : 1;
+      return createKeyEntry(key ?? 0, normalizedMode, count);
     })
     .sort((left, right) => {
       if (right.count !== left.count) {
@@ -496,7 +494,9 @@ function createKeyEntry(
 ): ChipmapKeyHistogramEntry {
   const noteName = NOTE_NAMES[key] ?? NOTE_NAMES[0];
   const modeLabel = mode === 1 ? "Major" : "Minor";
-  const camelot = mode === 1 ? CAMELOT_MAJOR[key] : CAMELOT_MINOR[key];
+  const camelot =
+    (mode === 1 ? CAMELOT_MAJOR[key] : CAMELOT_MINOR[key]) ??
+    (mode === 1 ? "8B" : "5A");
 
   return {
     key,
@@ -595,17 +595,18 @@ function buildChordPalette(
       .split("–")
       .map((token) => buildChordName(token, topKey.key, topKey.mode))
       .join(" - "),
-    description: CHORD_DESCRIPTIONS[roman],
+    description: CHORD_DESCRIPTIONS[roman] ?? "Flexible retro loop with strong scene identity.",
   }));
 }
 
 function buildChordName(token: string, tonic: number, mode: 0 | 1) {
-  const accidentalMatch = token.match(/^b+/)?.[0] ?? "";
+  const accidentalMatch = /^b+/.exec(token)?.[0] ?? "";
   const romanPart = token.slice(accidentalMatch.length);
   const accidentalOffset = accidentalMatch.length * -1;
   const degree = romanToDegree(romanPart);
   const scale = mode === 1 ? MAJOR_SCALE : MINOR_SCALE;
-  const semitone = (tonic + scale[degree - 1] + accidentalOffset + 12) % 12;
+  const interval = scale[degree - 1] ?? 0;
+  const semitone = (tonic + interval + accidentalOffset + 12) % 12;
   const noteName = NOTE_NAMES[semitone] ?? NOTE_NAMES[0];
   const quality = romanPart === romanPart.toLowerCase() ? "m" : "";
 
