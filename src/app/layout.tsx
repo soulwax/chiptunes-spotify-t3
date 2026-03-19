@@ -3,13 +3,12 @@ import "~/styles/globals.css";
 import { type Metadata } from "next";
 import { Inter, JetBrains_Mono } from "next/font/google";
 
-import { ThemeProvider } from "~/components/theme-provider";
 import { TRPCReactProvider } from "~/trpc/react";
 
 export const metadata: Metadata = {
   title: "Chipmap",
   description: "Turn your playlist into game music.",
-  metadataBase: new URL("https://chiptunes.darkfloor.org"),
+  metadataBase: new URL("https://chipmap.darkfloor.org"),
   alternates: {
     canonical: "/",
   },
@@ -32,13 +31,11 @@ export default function RootLayout({
   return (
     <html
       lang="en"
-      className={`${inter.variable} ${jetbrainsMono.variable}`}
+      className={`dark ${inter.variable} ${jetbrainsMono.variable}`}
       suppressHydrationWarning
     >
       <body>
-        <ThemeProvider>
-          <TRPCReactProvider>{children}</TRPCReactProvider>
-        </ThemeProvider>
+        <TRPCReactProvider>{children}</TRPCReactProvider>
       </body>
     </html>
   );

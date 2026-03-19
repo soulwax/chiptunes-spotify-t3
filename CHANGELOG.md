@@ -1,5 +1,24 @@
 # Changelog
 
+## 1.0.0 - 2026-03-19
+
+### Added
+
+- Added a fully public landing flow where users can paste a Spotify playlist URL, URI, or raw ID with no sign-in required.
+- Added server-side Spotify Client Credentials token management and a shared public Spotify API helper for playlist preview, playlist tracks, and audio-feature requests.
+- Added public recent-analysis and single-analysis loading routes so the landing page and analysis sidebar can work without sessions.
+
+### Changed
+
+- Replaced the BetterAuth-based dashboard flow with a no-login playlist preview and analysis flow on `/`.
+- Reworked cached analyses to be global by playlist instead of per-user and moved the analysis page back to the audio-feature `ChipmapAnalysis` view.
+- Removed browser-side theme persistence so the app now runs with zero cookies, zero sessions, and zero local storage.
+
+### Removed
+
+- Removed BetterAuth, Spotify OAuth, server sessions, the dashboard route, and all auth-gated route guards.
+- Removed all user-linked cache references and sidebar user profile UI.
+
 ## 0.5.0 - 2026-03-19
 
 ### Added

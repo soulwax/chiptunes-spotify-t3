@@ -8,5 +8,5 @@ export default {
   dbCredentials: {
     url: env.DATABASE_URL,
   },
-  tablesFilter: ["spotify2chip_*"],
+  tablesFilter: ["cached_analyses"],
 } satisfies Config;

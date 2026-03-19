@@ -1,26 +1,27 @@
 # Chipmap
 
 Chipmap is a full-stack Spotify playlist analyzer built on the T3 stack. It
-imports playlist metadata from Spotify and turns it into a canonical manifest
-plus a retro soundtrack brief for NES, SNES, and Genesis-inspired composition.
+lets anyone paste a public Spotify playlist URL, URI, or raw ID and turn that
+playlist into a retro soundtrack starter pack for NES, SNES, and
+Genesis-inspired composition.
 
 ## Stack
 
-- Next.js 15 App Router
+- Next.js 16 App Router
 - tRPC v11
-- BetterAuth with Spotify OAuth
+- Spotify Client Credentials API
 - Drizzle ORM with PostgreSQL
 - Tailwind CSS v4
 - Recharts and shadcn-style UI primitives
 
 ## App Flow
 
-1. Sign in with Spotify.
-2. Pick a playlist from your library.
-3. Import track, artist, album, release-year, popularity, duration, and ISRC metadata.
+1. Paste a public Spotify playlist URL, URI, or raw playlist ID.
+2. Preview the playlist instantly with artwork, owner, and track count.
+3. Run audio-feature analysis through Spotify's Client Credentials flow.
 4. Generate Chipmap analysis output:
-   canonical manifests, release timelines, genre fingerprints, cue maps,
-   per-track scene assignments, and era-matched soundtrack recommendations.
+   median BPM and mood stats, BPM distribution, cluster map, chord palette,
+   drum pattern suggestions, sound-design references, and JSON export.
 
 ## Development
 
@@ -30,30 +31,28 @@ plus a retro soundtrack brief for NES, SNES, and Genesis-inspired composition.
 - `pnpm typecheck`
 - `pnpm lint`
 
-## Production Auth
+## Environment
 
-- Production base URL: `https://chiptunes.darkfloor.org`
-- Spotify redirect URI: `https://chiptunes.darkfloor.org/api/auth/callback/spotify`
-- Set `BETTER_AUTH_URL=https://chiptunes.darkfloor.org` in Vercel production envs
+- Production app URL: `https://chipmap.darkfloor.org`
+- Required environment variables:
+  - `SPOTIFY_CLIENT_ID`
+  - `SPOTIFY_CLIENT_SECRET`
+  - `DATABASE_URL`
 
-## Local Spotify Auth
+## Public Playlist Limits
 
-- Spotify callback URLs must match BetterAuth exactly, including path order.
-- If you open the app at `http://localhost:3000`, register `http://localhost:3000/api/auth/callback/spotify`.
-- If you open the app at `http://10.2.0.2:3000`, register `http://10.2.0.2:3000/api/auth/callback/spotify`.
-- `http://.../api/auth/spotify/callback` is not a valid BetterAuth callback path.
+- Chipmap only supports public playlists.
+- Chipmap fetches up to the first 500 tracks from a playlist.
+- Local files and podcast episodes are filtered out before analysis.
+- Cached analyses expire after 24 hours and are then rebuilt on demand.
 
-## Spotify Playlist Limits
+## Analysis Outputs
 
-- Chipmap uses Spotify's current playlist items endpoint: `GET /playlists/{id}/items`.
-- Chipmap now runs in metadata-first mode because Spotify blocks audio features for this app.
-- In Spotify development-mode constraints, metadata import may only work for playlists you own or collaborate on.
-- Followed playlists from other owners can still appear in the dashboard, but Chipmap marks them as view-only and does not send them into analysis.
-
-## Metadata-First Outputs
-
-- Canonical playlist manifest with track title, artists, album, release year, duration, popularity, Spotify URL, and ISRC where available
-- Genre fingerprint from artist enrichment
-- Release timeline and runtime profile
-- Retro soundtrack lens, cue map, and grouped track roles for title screen, overworld, town, dungeon, boss, victory, and credits
-- Manifest and analysis JSON exports, Markdown starter-pack briefs, and print-ready PDF-style briefs for later non-Spotify audio analysis
+- Median tempo, energy, valence, danceability, and acousticness
+- BPM bucket classification and distribution chart
+- Key histogram with Camelot wheel labels
+- Energy × valence cluster map with cue and waveform suggestions
+- Chord palette recommendations
+- Drum pattern suggestion with 16-step grid
+- Era-specific sound design reference
+- JSON export of the full `ChipmapAnalysis`

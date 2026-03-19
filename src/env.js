@@ -7,13 +7,8 @@ export const env = createEnv({
    * isn't built with invalid env vars.
    */
   server: {
-    BETTER_AUTH_SECRET:
-      process.env.NODE_ENV === "production"
-        ? z.string()
-        : z.string().optional(),
-    BETTER_AUTH_URL: z.string().url().optional(),
-    BETTER_AUTH_SPOTIFY_CLIENT_ID: z.string(),
-    BETTER_AUTH_SPOTIFY_CLIENT_SECRET: z.string(),
+    SPOTIFY_CLIENT_ID: z.string().min(1),
+    SPOTIFY_CLIENT_SECRET: z.string().min(1),
     DATABASE_URL: z.string().url(),
     NODE_ENV: z
       .enum(["development", "test", "production"])
@@ -34,11 +29,8 @@ export const env = createEnv({
    * middlewares) or client-side so we need to destruct manually.
    */
   runtimeEnv: {
-    BETTER_AUTH_SECRET: process.env.BETTER_AUTH_SECRET,
-    BETTER_AUTH_URL: process.env.BETTER_AUTH_URL,
-    BETTER_AUTH_SPOTIFY_CLIENT_ID: process.env.BETTER_AUTH_SPOTIFY_CLIENT_ID,
-    BETTER_AUTH_SPOTIFY_CLIENT_SECRET:
-      process.env.BETTER_AUTH_SPOTIFY_CLIENT_SECRET,
+    SPOTIFY_CLIENT_ID: process.env.SPOTIFY_CLIENT_ID,
+    SPOTIFY_CLIENT_SECRET: process.env.SPOTIFY_CLIENT_SECRET,
     DATABASE_URL: process.env.DATABASE_URL,
     NODE_ENV: process.env.NODE_ENV,
   },
