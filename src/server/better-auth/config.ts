@@ -4,8 +4,14 @@ import { drizzleAdapter } from "better-auth/adapters/drizzle";
 import { env } from "~/env";
 import { db } from "~/server/db";
 
+const PRODUCTION_BASE_URL = "https://chiptunes.darkfloor.org";
+const DEFAULT_BASE_URL =
+  env.NODE_ENV === "production"
+    ? PRODUCTION_BASE_URL
+    : "http://localhost:3000";
+
 export const auth = betterAuth({
-  baseURL: env.BETTER_AUTH_URL ?? "http://localhost:3000",
+  baseURL: env.BETTER_AUTH_URL ?? DEFAULT_BASE_URL,
   database: drizzleAdapter(db, {
     provider: "pg",
   }),

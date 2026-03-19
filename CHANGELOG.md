@@ -13,6 +13,7 @@
 - Switched auth from the starter GitHub demo flow to Spotify OAuth with server-only Spotify access token handling.
 - Replaced the starter demo UI with a dark-first Chipmap design system, theme support, and chart-driven analysis views.
 - Added `BETTER_AUTH_URL` configuration so BetterAuth can generate stable callback URLs in development and production.
+- Pinned production deployment metadata and auth docs to `https://chiptunes.darkfloor.org` for Vercel rollout.
 
 ### Removed
 

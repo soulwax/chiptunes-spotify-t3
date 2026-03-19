@@ -9,6 +9,10 @@ import { TRPCReactProvider } from "~/trpc/react";
 export const metadata: Metadata = {
   title: "Chipmap",
   description: "Turn your playlist into game music.",
+  metadataBase: new URL("https://chiptunes.darkfloor.org"),
+  alternates: {
+    canonical: "/",
+  },
   icons: [{ rel: "icon", url: "/favicon.ico" }],
 };
 

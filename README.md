@@ -29,3 +29,9 @@ game-music starter pack for NES, SNES, and Genesis-inspired composition.
 - `pnpm dev`
 - `pnpm typecheck`
 - `pnpm lint`
+
+## Production Auth
+
+- Production base URL: `https://chiptunes.darkfloor.org`
+- Spotify redirect URI: `https://chiptunes.darkfloor.org/api/auth/callback/spotify`
+- Set `BETTER_AUTH_URL=https://chiptunes.darkfloor.org` in Vercel production envs
