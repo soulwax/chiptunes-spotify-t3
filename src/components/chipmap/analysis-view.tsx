@@ -65,7 +65,7 @@ export function AnalysisView({
 
   return (
     <div className="chipmap-grid bg-background min-h-screen">
-      <div className="mx-auto flex min-h-[calc(100vh-4rem)] w-full max-w-[1560px] flex-col gap-6 px-4 py-4 lg:flex-row lg:px-6">
+      <div className="mx-auto flex min-h-[calc(100vh-4rem)] w-full max-w-390 flex-col gap-6 px-4 py-4 lg:flex-row lg:px-6">
         <aside className="chipmap-panel border-border flex w-full flex-col rounded-[28px] border p-4 lg:max-w-[320px]">
           <div className="border-border/70 flex items-center gap-3 border-b px-2 pb-5">
             <ChipmapLogo className="h-12 w-12" />
@@ -111,9 +111,12 @@ export function AnalysisView({
                       )}
                     </div>
                     <div className="min-w-0 flex-1">
-                      <p className="truncate font-medium">{entry.playlistName}</p>
+                      <p className="truncate font-medium">
+                        {entry.playlistName}
+                      </p>
                       <p className="text-muted-foreground mt-1 text-xs">
-                        {entry.trackCount} track{entry.trackCount === 1 ? "" : "s"}
+                        {entry.trackCount} track
+                        {entry.trackCount === 1 ? "" : "s"}
                       </p>
                     </div>
                     <EraBadge era={entry.era} />
@@ -169,7 +172,10 @@ export function AnalysisView({
                   </div>
                 </div>
 
-                <Button onClick={handleExport} data-testid="export-analysis-button">
+                <Button
+                  onClick={handleExport}
+                  data-testid="export-analysis-button"
+                >
                   Export JSON
                 </Button>
               </div>
@@ -372,8 +378,13 @@ export function AnalysisView({
                       </thead>
                       <tbody>
                         {analysis.soundDesignReference.map((row) => (
-                          <tr key={row.waveform} className="border-border border-t">
-                            <td className="px-5 py-4 font-medium">{row.waveform}</td>
+                          <tr
+                            key={row.waveform}
+                            className="border-border border-t"
+                          >
+                            <td className="px-5 py-4 font-medium">
+                              {row.waveform}
+                            </td>
                             <td className="text-muted-foreground px-5 py-4">
                               {row.character}
                             </td>
@@ -493,16 +504,19 @@ function DrumPatternRow({
   testId: string;
 }>) {
   return (
-    <div className="grid grid-cols-[40px_1fr] items-center gap-3" data-testid={testId}>
+    <div
+      className="grid grid-cols-[40px_1fr] items-center gap-3"
+      data-testid={testId}
+    >
       <span className="text-muted-foreground font-mono text-sm">{label}</span>
-      <div className="grid grid-cols-[repeat(16,minmax(0,1fr))] gap-1">
+      <div className="grid grid-cols-16 gap-1">
         {steps.split("").map((step, index) => (
           <div
             key={`${label}-${index}`}
             className={
               step === "*"
-                ? `${activeClassName} aspect-square rounded-[6px]`
-                : "bg-secondary aspect-square rounded-[6px]"
+                ? `${activeClassName} aspect-square rounded-md`
+                : "bg-secondary aspect-square rounded-md"
             }
           />
         ))}
