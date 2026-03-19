@@ -6,16 +6,17 @@ import { db } from "~/server/db";
 
 export const auth = betterAuth({
   database: drizzleAdapter(db, {
-    provider: "pg", // or "pg" or "mysql"
-  }),
-  emailAndPassword: {
-    enabled: true,
+    provider: "pg",
   },
   socialProviders: {
-    github: {
-      clientId: env.BETTER_AUTH_GITHUB_CLIENT_ID,
-      clientSecret: env.BETTER_AUTH_GITHUB_CLIENT_SECRET,
-      redirectURI: "http://localhost:3000/api/auth/callback/github",
+    spotify: {
+      clientId: env.BETTER_AUTH_SPOTIFY_CLIENT_ID,
+      clientSecret: env.BETTER_AUTH_SPOTIFY_CLIENT_SECRET,
+      scope: [
+        "playlist-read-private",
+        "playlist-read-collaborative",
+        "user-read-private",
+      ],
     },
   },
 });

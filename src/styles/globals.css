@@ -1,6 +1,86 @@
 @import "tailwindcss";
 
-@theme {
-  --font-sans: var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif,
-    "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
+@theme inline {
+  --font-sans: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
+  --font-mono: var(--font-jetbrains-mono), ui-monospace, monospace;
+  --color-background: hsl(var(--background));
+  --color-foreground: hsl(var(--foreground));
+  --color-card: hsl(var(--card));
+  --color-card-foreground: hsl(var(--card-foreground));
+  --color-popover: hsl(var(--popover));
+  --color-popover-foreground: hsl(var(--popover-foreground));
+  --color-primary: hsl(var(--primary));
+  --color-primary-foreground: hsl(var(--primary-foreground));
+  --color-secondary: hsl(var(--secondary));
+  --color-secondary-foreground: hsl(var(--secondary-foreground));
+  --color-muted: hsl(var(--muted));
+  --color-muted-foreground: hsl(var(--muted-foreground));
+  --color-accent: hsl(var(--accent));
+  --color-accent-foreground: hsl(var(--accent-foreground));
+  --color-border: hsl(var(--border));
+  --color-input: hsl(var(--input));
+  --color-ring: hsl(var(--ring));
+}
+
+:root {
+  --background: 40 12% 5%;
+  --foreground: 43 13% 90%;
+  --card: 40 6% 10%;
+  --card-foreground: 43 13% 90%;
+  --popover: 40 6% 10%;
+  --popover-foreground: 43 13% 90%;
+  --primary: 188 35% 47%;
+  --primary-foreground: 40 12% 5%;
+  --primary-shadow: 188 36% 26%;
+  --secondary: 36 6% 17%;
+  --secondary-foreground: 43 13% 90%;
+  --muted: 36 6% 17%;
+  --muted-foreground: 45 3% 53%;
+  --accent: 188 35% 47%;
+  --accent-foreground: 43 13% 90%;
+  --border: 36 6% 17%;
+  --input: 36 6% 17%;
+  --ring: 188 35% 47%;
+  --amber: 31 99% 43%;
+  --purple: 270 53% 48%;
+  --green: 96 42% 47%;
+}
+
+* {
+  border-color: hsl(var(--border));
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  min-height: 100vh;
+  background:
+    radial-gradient(circle at top, rgba(79, 152, 163, 0.14), transparent 38%),
+    radial-gradient(circle at 20% 20%, rgba(122, 57, 187, 0.14), transparent 28%),
+    linear-gradient(180deg, rgba(26, 25, 23, 0.96), rgba(14, 13, 11, 1));
+  color: hsl(var(--foreground));
+  font-family: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
+}
+
+::selection {
+  background: hsl(var(--accent) / 0.28);
+  color: hsl(var(--foreground));
+}
+
+.chipmap-grid {
+  background-image:
+    linear-gradient(hsl(var(--border) / 0.18) 1px, transparent 1px),
+    linear-gradient(90deg, hsl(var(--border) / 0.18) 1px, transparent 1px);
+  background-size: 24px 24px;
+}
+
+.chipmap-panel {
+  backdrop-filter: blur(14px);
+  background: linear-gradient(
+    180deg,
+    hsl(var(--card) / 0.96),
+    hsl(var(--background) / 0.98)
+  );
 }

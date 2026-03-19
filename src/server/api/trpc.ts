@@ -11,7 +11,8 @@ import { initTRPC, TRPCError } from "@trpc/server";
 import superjson from "superjson";
 import { ZodError } from "zod";
 
-import { auth } from "~/server/better-auth";
+import { isAppError } from "~/lib/errors";
+import { getSessionFromRequestHeaders } from "~/server/better-auth/server";
 import { db } from "~/server/db";
 
 /**
@@ -27,9 +28,7 @@ import { db } from "~/server/db";
  * @see https://trpc.io/docs/server/context
  */
 export const createTRPCContext = async (opts: { headers: Headers }) => {
-  const session = await auth.api.getSession({
-    headers: opts.headers,
-  });
+  const session = await getSessionFromRequestHeaders(opts.headers);
   return {
     db,
     session,
@@ -51,6 +50,7 @@ const t = initTRPC.context<typeof createTRPCContext>().create({
       ...shape,
       data: {
         ...shape.data,
+        appErrorCode: isAppError(error.cause) ? error.cause.code : null,
         zodError:
           error.cause instanceof ZodError ? error.cause.flatten() : null,
       },

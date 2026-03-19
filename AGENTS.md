@@ -28,3 +28,12 @@
 3. App fetches audio features (BPM, key, energy, valence, danceability) for every track
 4. Analysis engine clusters tracks and maps them to 8-bit/16-bit game music contexts
 5. Outputs a "Game Music Starter Pack" — tempo targets, key palette, drum patterns, chord suggestions per game context
+
+## Where it is hosted
+
+- Vercel (on <https://chipmap.darkfloor.org>)
+- Postgres hosted on Neon
+
+## Spotify Callback URL
+
+- <https://chiptunes.darkfloor.org/api/auth/callback/spotify>
