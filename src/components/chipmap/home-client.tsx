@@ -103,8 +103,8 @@ export function HomeClient({ notice }: HomeClientProps) {
               Turn any playlist into game music
             </h1>
             <p className="text-muted-foreground mx-auto mt-4 max-w-xl text-sm sm:text-base">
-              Paste a public Spotify playlist link to analyse BPM, key, energy
-              and get an 8-bit starter pack
+              Paste a public Spotify playlist link to turn track metadata,
+              genres, and release eras into a retro soundtrack starter pack
             </p>
           </div>
 
@@ -178,7 +178,7 @@ export function HomeClient({ notice }: HomeClientProps) {
                         <p className="text-muted-foreground text-xs">
                           {analysisStep === "tracks"
                             ? "Fetching tracks…"
-                            : "Analysing audio features…"}
+                            : "Enriching artist metadata…"}
                         </p>
                       </div>
                     ) : (

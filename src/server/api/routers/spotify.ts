@@ -2,15 +2,20 @@ import { TRPCError } from "@trpc/server";
 import { desc, eq } from "drizzle-orm";
 import { z } from "zod";
 
-import { analyzeFeatures } from "~/lib/analysis";
 import { APP_ERROR_CODES, AppError } from "~/lib/errors";
 import {
+  buildStarterPackBrief,
+  analyzePlaylistMetadata,
+  isMetadataAnalysis,
+} from "~/lib/metadata-analysis";
+import {
   SpotifyApiError,
-  getAllAudioFeatures,
+  getArtistsByIds,
   getPlaylist,
   getPlaylistTracks,
   resolvePlaylistId,
 } from "~/lib/spotify-api";
+import { toFileNameBase } from "~/lib/utils";
 import { createTRPCRouter, publicProcedure } from "~/server/api/trpc";
 import { cachedAnalyses } from "~/server/db/schema";
 
@@ -41,7 +46,7 @@ export const spotifyRouter = createTRPCRouter({
           trackCount: playlist.tracks.total,
         };
       } catch (error) {
-        throw toTrpcSpotifyError(error, "playlist");
+        throw toTrpcSpotifyError(error);
       }
     }),
 
@@ -54,6 +59,7 @@ export const spotifyRouter = createTRPCRouter({
 
       if (
         cachedAnalysis &&
+        isMetadataAnalysis(cachedAnalysis.analysisJson) &&
         cachedAnalysis.analyzedAt.getTime() >=
           Date.now() - ANALYSIS_CACHE_WINDOW_MS
       ) {
@@ -79,82 +85,100 @@ export const spotifyRouter = createTRPCRouter({
           getPlaylistTracks(input.playlistId),
         ]);
       } catch (error) {
-        throw toTrpcSpotifyError(error, "playlist");
+        throw toTrpcSpotifyError(error);
       }
 
       if (tracks.length === 0) {
         throw new TRPCError({
           code: "BAD_REQUEST",
-          message: "Playlist has no analyzable tracks.",
+          message: "Playlist has no importable tracks.",
         });
       }
-
-      let features;
 
       try {
-        features = await getAllAudioFeatures(tracks.map((track) => track.id));
-      } catch (error) {
-        throw toTrpcSpotifyError(error, "audio-features");
-      }
+        const artistGenres = await getArtistsByIds(
+          tracks.flatMap((track) =>
+            track.artists
+              .map((artist) => artist.id)
+              .filter((artistId): artistId is string => Boolean(artistId)),
+          ),
+        );
 
-      const featureMap = new Map(features.map((feature) => [feature.id, feature]));
-      const analyzableTracks = tracks.filter((track) => featureMap.has(track.id));
-      const orderedFeatures = analyzableTracks.map((track) => featureMap.get(track.id)!);
-
-      if (orderedFeatures.length === 0) {
-        throw new TRPCError({
-          code: "BAD_GATEWAY",
-          message:
-            "Spotify blocked audio-feature access for this app. Please try again later.",
-          cause: new AppError(APP_ERROR_CODES.SPOTIFY_AUDIO_FEATURES_UNAVAILABLE),
-        });
-      }
-
-      const analysis = analyzeFeatures(
-        analyzableTracks.map((track) => ({
-          id: track.id,
-          name: track.name,
-        })),
-        orderedFeatures,
-      );
-      const analyzedAt = new Date();
-      const coverUrl = playlist.images[0]?.url ?? null;
-      const trackCount = analyzableTracks.length;
-
-      await ctx.db
-        .insert(cachedAnalyses)
-        .values({
+        const analysis = analyzePlaylistMetadata({
+          artistGenres: new Map(
+            [...artistGenres.entries()].map(([spotifyId, artist]) => [
+              spotifyId,
+              {
+                genres: artist.genres,
+                name: artist.name,
+                spotifyId,
+              },
+            ]),
+          ),
           playlistId: playlist.id,
           playlistName: playlist.name,
-          coverUrl,
-          trackCount,
-          era: analysis.era,
-          analysisJson: analysis,
-          analyzedAt,
-        })
-        .onConflictDoUpdate({
-          target: cachedAnalyses.playlistId,
-          set: {
+          tracks: tracks.map((track) => ({
+            album: {
+              imageUrl: track.album.images[0]?.url ?? null,
+              name: track.album.name,
+              releaseDate: track.album.release_date,
+              releaseYear: parseReleaseYear(track.album.release_date),
+              spotifyId: track.album.id,
+            },
+            artists: track.artists.map((artist) => ({
+              name: artist.name,
+              spotifyId: artist.id,
+            })),
+            durationMs: track.duration_ms,
+            explicit: track.explicit,
+            isrc: track.external_ids?.isrc ?? null,
+            name: track.name,
+            popularity: track.popularity,
+            spotifyId: track.id,
+            spotifyUrl: track.external_urls?.spotify ?? null,
+          })),
+        });
+        const analyzedAt = new Date();
+        const coverUrl = playlist.images[0]?.url ?? null;
+        const trackCount = tracks.length;
+
+        await ctx.db
+          .insert(cachedAnalyses)
+          .values({
+            playlistId: playlist.id,
             playlistName: playlist.name,
             coverUrl,
             trackCount,
             era: analysis.era,
             analysisJson: analysis,
             analyzedAt,
-          },
-        });
+          })
+          .onConflictDoUpdate({
+            target: cachedAnalyses.playlistId,
+            set: {
+              playlistName: playlist.name,
+              coverUrl,
+              trackCount,
+              era: analysis.era,
+              analysisJson: analysis,
+              analyzedAt,
+            },
+          });
 
-      return {
-        analysis,
-        fromCache: false,
-        playlist: {
-          coverUrl,
-          id: playlist.id,
-          name: playlist.name,
-          owner: playlist.owner.display_name,
-          trackCount,
-        },
-      };
+        return {
+          analysis,
+          fromCache: false,
+          playlist: {
+            coverUrl,
+            id: playlist.id,
+            name: playlist.name,
+            owner: playlist.owner.display_name,
+            trackCount,
+          },
+        };
+      } catch (error) {
+        throw toTrpcSpotifyError(error);
+      }
     }),
 
   getRecentAnalyses: publicProcedure.query(async ({ ctx }) => {
@@ -194,12 +218,48 @@ export const spotifyRouter = createTRPCRouter({
         trackCount: entry.trackCount,
       };
     }),
+
+  exportAnalysis: publicProcedure
+    .input(z.object({ playlistId: z.string().min(1) }))
+    .query(async ({ ctx, input }) => {
+      const entry = await ctx.db.query.cachedAnalyses.findFirst({
+        where: eq(cachedAnalyses.playlistId, input.playlistId),
+      });
+
+      if (!entry) {
+        throw new TRPCError({
+          code: "NOT_FOUND",
+          message: "No cached analysis was found for that playlist.",
+        });
+      }
+
+      if (!isMetadataAnalysis(entry.analysisJson)) {
+        throw new TRPCError({
+          code: "BAD_REQUEST",
+          message:
+            "This cached analysis uses the older audio-feature format. Re-run the playlist to generate the metadata-first starter pack.",
+        });
+      }
+
+      const starterPack = buildStarterPackBrief({
+        analysis: entry.analysisJson,
+        playlistName: entry.playlistName,
+      });
+
+      return {
+        analysis: entry.analysisJson,
+        filenameBase: toFileNameBase(entry.playlistName, entry.playlistId),
+        manifest: entry.analysisJson.manifest,
+        pdfHtml: starterPack.html,
+        playlistId: entry.playlistId,
+        playlistName: entry.playlistName,
+        sections: starterPack.sections,
+        starterPackMarkdown: starterPack.markdown,
+      };
+    }),
 });
 
-function toTrpcSpotifyError(
-  error: unknown,
-  context: "playlist" | "audio-features",
-) {
+function toTrpcSpotifyError(error: unknown) {
   if (error instanceof SpotifyApiError) {
     if (error.status === 404) {
       return new TRPCError({
@@ -228,15 +288,6 @@ function toTrpcSpotifyError(
       });
     }
 
-    if (error.status === 403 && context === "audio-features") {
-      return new TRPCError({
-        code: "BAD_GATEWAY",
-        message:
-          "Spotify blocked audio-feature access for this app. Please try again later.",
-        cause: new AppError(APP_ERROR_CODES.SPOTIFY_AUDIO_FEATURES_UNAVAILABLE),
-      });
-    }
-
     console.error("[Spotify] Upstream request failed:", error.status, error.message);
     return new TRPCError({
       code: "BAD_GATEWAY",
@@ -249,4 +300,13 @@ function toTrpcSpotifyError(
     code: "INTERNAL_SERVER_ERROR",
     message: "Spotify API unavailable — check back soon.",
   });
+}
+
+function parseReleaseYear(releaseDate: string | null) {
+  if (!releaseDate) {
+    return null;
+  }
+
+  const year = Number.parseInt(releaseDate.slice(0, 4), 10);
+  return Number.isFinite(year) ? year : null;
 }

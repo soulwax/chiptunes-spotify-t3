@@ -21,9 +21,24 @@ export type SpotifyPlaylist = {
 export type SpotifyTrack = {
   id: string;
   name: string;
-  artists: { name: string }[];
-  album: { images: { url: string }[] };
+  artists: { id: string | null; name: string }[];
+  album: {
+    id: string | null;
+    images: { url: string }[];
+    name: string;
+    release_date: string | null;
+  };
   duration_ms: number;
+  explicit: boolean;
+  popularity: number | null;
+  external_ids: { isrc?: string } | null;
+  external_urls: { spotify?: string } | null;
+};
+
+export type SpotifyArtist = {
+  id: string;
+  name: string;
+  genres: string[];
 };
 
 export type SpotifyAudioFeatures = {
@@ -48,9 +63,18 @@ type PlaylistItemsResponse = {
       | ({
           id: string | null;
           name: string;
-          artists: { name: string }[];
-          album: { images: { url: string }[] };
+          artists: { id: string | null; name: string }[];
+          album: {
+            id: string | null;
+            images: { url: string }[];
+            name: string;
+            release_date: string | null;
+          };
           duration_ms: number;
+          explicit: boolean;
+          popularity: number | null;
+          external_ids: { isrc?: string } | null;
+          external_urls: { spotify?: string } | null;
           is_local?: boolean;
           type?: string;
         } | null)
@@ -61,6 +85,10 @@ type PlaylistItemsResponse = {
 
 type AudioFeaturesResponse = {
   audio_features: Array<SpotifyAudioFeatures | null>;
+};
+
+type ArtistsResponse = {
+  artists: SpotifyArtist[];
 };
 
 async function spotifyFetch<T>(path: string): Promise<T> {
@@ -147,7 +175,7 @@ export async function getPlaylistTracks(
     const remaining = MAX_PLAYLIST_TRACKS - tracks.length;
     const limit = Math.min(PLAYLIST_PAGE_SIZE, remaining);
     const response = await spotifyFetch<PlaylistItemsResponse>(
-      `/playlists/${playlistId}/tracks?limit=${limit}&offset=${offset}&fields=items(track(id,name,artists(name),album(images),duration_ms,is_local,type)),next`,
+      `/playlists/${playlistId}/tracks?limit=${limit}&offset=${offset}&fields=items(track(id,name,artists(id,name),album(id,name,release_date,images),duration_ms,explicit,popularity,external_ids(isrc),external_urls(spotify),is_local,type)),next`,
     );
 
     const pageTracks = response.items
@@ -166,6 +194,10 @@ export async function getPlaylistTracks(
         artists: track.artists,
         album: track.album,
         duration_ms: track.duration_ms,
+        explicit: track.explicit,
+        popularity: track.popularity,
+        external_ids: track.external_ids,
+        external_urls: track.external_urls,
       }));
 
     tracks.push(...pageTracks);
@@ -221,6 +253,30 @@ export async function getAllAudioFeatures(
   );
 
   return responses.flat();
+}
+
+export async function getArtistsByIds(
+  artistIds: string[],
+): Promise<Map<string, SpotifyArtist>> {
+  const uniqueArtistIds = [...new Set(artistIds)].filter(Boolean);
+  const artistMap = new Map<string, SpotifyArtist>();
+
+  for (let startIndex = 0; startIndex < uniqueArtistIds.length; startIndex += 50) {
+    const batch = uniqueArtistIds.slice(startIndex, startIndex + 50);
+    if (batch.length === 0) {
+      continue;
+    }
+
+    const response = await spotifyFetch<ArtistsResponse>(
+      `/artists?ids=${encodeURIComponent(batch.join(","))}`,
+    );
+
+    for (const artist of response.artists) {
+      artistMap.set(artist.id, artist);
+    }
+  }
+
+  return artistMap;
 }
 
 export { SpotifyApiError };

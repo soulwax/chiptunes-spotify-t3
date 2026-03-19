@@ -1,6 +1,6 @@
 import { integer, jsonb, pgTable, text, timestamp, uuid } from "drizzle-orm/pg-core";
 
-import { type ChipmapAnalysis } from "~/lib/analysis";
+import { type ChipmapAnalysis } from "~/lib/metadata-analysis";
 
 export const cachedAnalyses = pgTable("cached_analyses", {
   id: uuid("id").defaultRandom().primaryKey(),

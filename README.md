@@ -18,10 +18,10 @@ Genesis-inspired composition.
 
 1. Paste a public Spotify playlist URL, URI, or raw playlist ID.
 2. Preview the playlist instantly with artwork, owner, and track count.
-3. Run audio-feature analysis through Spotify's Client Credentials flow.
+3. Import public playlist metadata and enrich the artist roster with public Spotify genre data.
 4. Generate Chipmap analysis output:
-   median BPM and mood stats, BPM distribution, cluster map, chord palette,
-   drum pattern suggestions, sound-design references, and JSON export.
+   release timelines, genre fingerprints, soundtrack lenses, cue maps,
+   track-role assignments, and starter-pack exports.
 
 ## Development
 
@@ -48,11 +48,8 @@ Genesis-inspired composition.
 
 ## Analysis Outputs
 
-- Median tempo, energy, valence, danceability, and acousticness
-- BPM bucket classification and distribution chart
-- Key histogram with Camelot wheel labels
-- Energy × valence cluster map with cue and waveform suggestions
-- Chord palette recommendations
-- Drum pattern suggestion with 16-step grid
-- Era-specific sound design reference
-- JSON export of the full `ChipmapAnalysis`
+- Canonical manifest with track, artist, album, release year, runtime, popularity, Spotify URL, and ISRC where available
+- Release timeline and playlist overview metrics
+- Genre fingerprint and soundtrack-era recommendations
+- Cue map and track-role assignment for scenes like title screen, town, dungeon, boss, and credits
+- Starter-pack exports as analysis JSON, manifest JSON, Markdown brief, and print-ready PDF brief

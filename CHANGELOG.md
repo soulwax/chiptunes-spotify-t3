@@ -1,5 +1,19 @@
 # Changelog
 
+## 1.1.0 - 2026-03-19
+
+### Added
+
+- Restored Chipmap's metadata-first soundtrack brief pipeline for public no-login playlists, including genre enrichment, cue maps, track roles, and starter-pack exports.
+- Added a public `spotify.exportAnalysis` route again so metadata runs can export manifest JSON, Markdown, and PDF starter packs.
+- Added dual-mode analysis rendering so legacy audio-feature cache entries still open while new runs use the metadata-first producer workflow.
+
+### Changed
+
+- Switched public analysis generation away from blocked Spotify audio-feature requests and back to the metadata-first engine.
+- Updated the landing page and analysis copy so Chipmap now accurately describes the metadata-driven soundtrack workflow.
+- Existing stale audio-feature cache entries are now bypassed on rerun so public playlists can refresh into the usable fallback format.
+
 ## 1.0.1 - 2026-03-19
 
 ### Fixed
