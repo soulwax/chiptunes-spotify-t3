@@ -71,7 +71,10 @@ export function HomeClient({ notice }: HomeClientProps) {
   const playlistPreview = !previewQuery.isFetching ? preview ?? null : null;
   const previewError =
     debouncedInput.length > 0 && previewQuery.isError
-      ? "Couldn't find that playlist — make sure it's public and the link is correct"
+      ? getPreviewErrorMessage(
+          previewQuery.error.data?.appErrorCode,
+          previewQuery.error.message,
+        )
       : null;
   const analyzeError = getAnalysisErrorMessage(
     analyzeMutation.error?.data?.appErrorCode,
@@ -302,4 +305,19 @@ function getAnalysisErrorMessage(
   }
 
   return fallbackMessage ?? null;
+}
+
+function getPreviewErrorMessage(
+  appErrorCode: string | null | undefined,
+  fallbackMessage: string | undefined,
+) {
+  if (appErrorCode === APP_ERROR_CODES.SPOTIFY_API_UNAVAILABLE) {
+    return "Spotify API unavailable — check back soon.";
+  }
+
+  if (appErrorCode === APP_ERROR_CODES.SPOTIFY_PLAYLIST_NOT_PUBLIC) {
+    return "Couldn't find that playlist — make sure it's public and the link is correct";
+  }
+
+  return fallbackMessage ?? "Couldn't find that playlist — make sure it's public and the link is correct";
 }

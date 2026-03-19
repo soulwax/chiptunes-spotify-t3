@@ -1,5 +1,13 @@
 # Changelog
 
+## 1.0.1 - 2026-03-19
+
+### Fixed
+
+- Restored the valid Spotify Client Credentials app configuration so public playlist previews can load again in production.
+- Fixed the landing-page preview error state so Spotify API credential failures no longer appear as invalid-playlist errors.
+- Normalized Spotify `invalid_client` failures into the generic public-service error message.
+
 ## 1.0.0 - 2026-03-19
 
 ### Added

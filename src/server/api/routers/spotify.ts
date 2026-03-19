@@ -219,6 +219,15 @@ function toTrpcSpotifyError(
       });
     }
 
+    if (error.status === 400 && error.message.toLowerCase().includes("invalid client")) {
+      console.error("[Spotify] Invalid client credentials:", error.message);
+      return new TRPCError({
+        code: "SERVICE_UNAVAILABLE",
+        message: "Spotify API unavailable — check back soon.",
+        cause: new AppError(APP_ERROR_CODES.SPOTIFY_API_UNAVAILABLE),
+      });
+    }
+
     if (error.status === 403 && context === "audio-features") {
       return new TRPCError({
         code: "BAD_GATEWAY",
