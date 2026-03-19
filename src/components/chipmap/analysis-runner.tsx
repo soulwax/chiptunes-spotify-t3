@@ -37,7 +37,8 @@ export function AnalysisRunner({
 
   useEffect(() => {
     if (
-      mutation.error?.data?.appErrorCode !== APP_ERROR_CODES.SPOTIFY_TOKEN_EXPIRED
+      mutation.error?.data?.appErrorCode !==
+      APP_ERROR_CODES.SPOTIFY_TOKEN_EXPIRED
     ) {
       return;
     }
@@ -54,7 +55,7 @@ export function AnalysisRunner({
 
   if (mutation.isError) {
     return (
-      <div className="chipmap-grid flex min-h-screen items-center justify-center bg-background px-4 py-8">
+      <div className="chipmap-grid bg-background flex min-h-screen items-center justify-center px-4 py-8">
         <Card className="w-full max-w-xl" data-testid="analysis-error-state">
           <CardHeader>
             <CardTitle>{errorCopy.title}</CardTitle>
@@ -67,7 +68,11 @@ export function AnalysisRunner({
             >
               Retry Analysis
             </Button>
-            <Button asChild variant="outline" data-testid="analysis-back-button">
+            <Button
+              asChild
+              variant="outline"
+              data-testid="analysis-back-button"
+            >
               <Link href="/dashboard">Back to Dashboard</Link>
             </Button>
           </CardContent>
@@ -77,17 +82,17 @@ export function AnalysisRunner({
   }
 
   return (
-    <div className="chipmap-grid flex min-h-screen items-center justify-center bg-background px-4 py-8">
+    <div className="chipmap-grid bg-background flex min-h-screen items-center justify-center px-4 py-8">
       <Card
-        className="w-full max-w-2xl overflow-hidden border-accent/30 bg-card/95"
+        className="border-accent/30 bg-card/95 w-full max-w-2xl overflow-hidden"
         data-testid="analysis-progress-indicator"
       >
-        <div className="h-2 bg-[linear-gradient(90deg,hsl(var(--accent)),hsl(var(--purple)),hsl(var(--amber)),hsl(var(--accent)))] bg-[length:200%_100%] animate-[progress-pan_2.5s_linear_infinite]" />
+        <div className="h-2 animate-[progress-pan_2.5s_linear_infinite] bg-[linear-gradient(90deg,hsl(var(--accent)),hsl(var(--purple)),hsl(var(--amber)),hsl(var(--accent)))] bg-size-[200%_100%]" />
         <CardContent className="p-8 sm:p-10">
           <div className="mb-6 flex items-center gap-4">
             <ChipmapLogo className="h-16 w-16 animate-pulse" />
             <div>
-              <p className="mb-2 text-xs font-semibold uppercase tracking-[0.22em] text-accent">
+              <p className="text-accent mb-2 text-xs font-semibold tracking-[0.22em] uppercase">
                 Running Analysis
               </p>
               <h1 className="text-3xl font-semibold tracking-tight">
@@ -96,7 +101,7 @@ export function AnalysisRunner({
             </div>
           </div>
 
-          <p className="max-w-2xl text-sm text-muted-foreground sm:text-base">
+          <p className="text-muted-foreground max-w-2xl text-sm sm:text-base">
             Chipmap is pulling your Spotify tracks, batching audio features, and
             translating the results into a retro starter pack. Large playlists
             can take a few seconds.
@@ -110,11 +115,11 @@ export function AnalysisRunner({
             ].map((step, index) => (
               <div
                 key={step}
-                className="rounded-2xl border border-border bg-secondary/50 p-4"
+                className="border-border bg-secondary/50 rounded-2xl border p-4"
               >
-                <div className="mb-3 h-2 overflow-hidden rounded-full bg-background">
+                <div className="bg-background mb-3 h-2 overflow-hidden rounded-full">
                   <div
-                    className="h-full rounded-full bg-accent"
+                    className="bg-accent h-full rounded-full"
                     style={{ width: `${70 + index * 10}%` }}
                   />
                 </div>

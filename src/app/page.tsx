@@ -13,13 +13,13 @@ export default async function HomePage() {
   }
 
   return (
-    <main className="chipmap-grid flex min-h-screen items-center justify-center bg-background px-4 py-10">
-      <Card className="chipmap-panel w-full max-w-xl overflow-hidden border-accent/25">
+    <main className="chipmap-grid bg-background flex min-h-screen items-center justify-center px-4 py-10">
+      <Card className="chipmap-panel border-accent/25 w-full max-w-xl overflow-hidden">
         <div className="h-2 bg-[linear-gradient(90deg,hsl(var(--accent)),hsl(var(--purple)),hsl(var(--amber)))]" />
         <CardContent className="px-8 py-10 sm:px-10 sm:py-12">
           <div className="mb-8 flex flex-col items-center text-center">
             <ChipmapLogo className="mb-5 h-20 w-20" />
-            <p className="mb-3 text-xs font-semibold uppercase tracking-[0.28em] text-accent">
+            <p className="text-accent mb-3 text-xs font-semibold tracking-[0.28em] uppercase">
               Chipmap
             </p>
             <h1
@@ -28,25 +28,31 @@ export default async function HomePage() {
             >
               Turn your playlist into game music
             </h1>
-            <p className="mt-4 max-w-lg text-sm text-muted-foreground sm:text-base">
+            <p className="text-muted-foreground mt-4 max-w-lg text-sm sm:text-base">
               Sign in with Spotify to turn tempo, keys, and mood into a retro
               starter pack for NES, SNES, and Genesis-inspired tracks.
             </p>
           </div>
 
-          <div className="mb-8 rounded-[24px] border border-border bg-secondary/40 p-6">
+          <div className="border-border bg-secondary/40 mb-8 rounded-3xl border p-6">
             <div className="mb-3 flex items-center justify-between">
-              <span className="text-sm font-medium text-foreground">
+              <span className="text-foreground text-sm font-medium">
                 What Chipmap builds
               </span>
-              <span className="rounded-full border border-accent/25 bg-accent/10 px-3 py-1 text-xs font-semibold uppercase tracking-[0.16em] text-accent">
+              <span className="border-accent/25 bg-accent/10 text-accent rounded-full border px-3 py-1 text-xs font-semibold tracking-[0.16em] uppercase">
                 Starter Pack
               </span>
             </div>
-            <ul className="space-y-2 text-sm text-muted-foreground">
-              <li>Median BPM, mood spread, and playable game-context buckets</li>
-              <li>Dominant keys with Camelot codes and chord progression prompts</li>
-              <li>Drum grids, cluster cues, and era-matched sound design notes</li>
+            <ul className="text-muted-foreground space-y-2 text-sm">
+              <li>
+                Median BPM, mood spread, and playable game-context buckets
+              </li>
+              <li>
+                Dominant keys with Camelot codes and chord progression prompts
+              </li>
+              <li>
+                Drum grids, cluster cues, and era-matched sound design notes
+              </li>
             </ul>
           </div>
 
