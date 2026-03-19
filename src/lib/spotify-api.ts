@@ -60,25 +60,25 @@ export type SpotifyAudioFeatures = {
 type PlaylistItemsResponse = {
   items: Array<{
     track:
-      | ({
-          id: string | null;
-          name: string;
-          artists: { id: string | null; name: string }[];
-          album: {
-            id: string | null;
-            images: { url: string }[];
-            name: string;
-            release_date: string | null;
-          };
-          duration_ms: number;
-          explicit: boolean;
-          popularity: number | null;
-          external_ids: { isrc?: string } | null;
-          external_urls: { spotify?: string } | null;
-          is_local?: boolean;
-          type?: string;
-        } | null)
-      | undefined;
+    | ({
+      id: string | null;
+      name: string;
+      artists: { id: string | null; name: string }[];
+      album: {
+        id: string | null;
+        images: { url: string }[];
+        name: string;
+        release_date: string | null;
+      };
+      duration_ms: number;
+      explicit: boolean;
+      popularity: number | null;
+      external_ids: { isrc?: string } | null;
+      external_urls: { spotify?: string } | null;
+      is_local?: boolean;
+      type?: string;
+    } | null)
+    | undefined;
   }>;
   next: string | null;
 };
@@ -108,9 +108,9 @@ async function spotifyFetch<T>(path: string): Promise<T> {
   if (!response.ok) {
     const message =
       payload &&
-      typeof payload === "object" &&
-      "error" in payload &&
-      payload.error?.message
+        typeof payload === "object" &&
+        "error" in payload &&
+        payload.error?.message
         ? payload.error.message
         : `Spotify request failed with status ${response.status}`;
 
@@ -263,9 +263,7 @@ export async function getArtistsByIds(
 
   for (let startIndex = 0; startIndex < uniqueArtistIds.length; startIndex += 50) {
     const batch = uniqueArtistIds.slice(startIndex, startIndex + 50);
-    if (batch.length === 0) {
-      continue;
-    }
+
 
     const response = await spotifyFetch<ArtistsResponse>(
       `/artists?ids=${encodeURIComponent(batch.join(","))}`,

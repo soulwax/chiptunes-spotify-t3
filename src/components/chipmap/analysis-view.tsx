@@ -57,12 +57,7 @@ export function AnalysisView(props: AnalysisViewProps) {
     return <MetadataAnalysisPage {...props} analysis={props.analysis} />;
   }
 
-  return (
-    <AudioFeatureAnalysisPage
-      {...props}
-      analysis={props.analysis}
-    />
-  );
+  return <AudioFeatureAnalysisPage {...props} analysis={props.analysis} />;
 }
 
 function MetadataAnalysisPage({
@@ -195,7 +190,10 @@ function MetadataAnalysisPage({
                 PDF Brief
               </Button>
             </div>
-            <div className="text-muted-foreground text-sm" data-testid="export-filename-hint">
+            <div
+              className="text-muted-foreground text-sm"
+              data-testid="export-filename-hint"
+            >
               {exportAnalysis.isFetching
                 ? "Preparing export payload..."
                 : `Starter pack base filename: ${fallbackFilenameBase}`}
@@ -242,8 +240,14 @@ function MetadataAnalysisPage({
               <div className="h-72" data-testid="release-timeline-chart">
                 <ResponsiveContainer width="100%" height="100%">
                   <BarChart data={analysis.releaseProfile.distribution}>
-                    <CartesianGrid vertical={false} stroke="hsl(var(--border))" />
-                    <XAxis dataKey="label" stroke="hsl(var(--muted-foreground))" />
+                    <CartesianGrid
+                      vertical={false}
+                      stroke="hsl(var(--border))"
+                    />
+                    <XAxis
+                      dataKey="label"
+                      stroke="hsl(var(--muted-foreground))"
+                    />
                     <YAxis stroke="hsl(var(--muted-foreground))" />
                     <Tooltip
                       cursor={{ fill: "hsl(var(--secondary) / 0.45)" }}
@@ -312,7 +316,9 @@ function MetadataAnalysisPage({
               <CardTitle>{analysis.soundtrackProfile.title}</CardTitle>
               <EraBadge era={analysis.era} />
             </div>
-            <CardDescription>{analysis.soundtrackProfile.description}</CardDescription>
+            <CardDescription>
+              {analysis.soundtrackProfile.description}
+            </CardDescription>
           </CardHeader>
           <CardContent className="grid gap-3">
             {analysis.soundtrackProfile.reasons.map((reason) => (
@@ -338,11 +344,15 @@ function MetadataAnalysisPage({
               </CardHeader>
               <CardContent className="grid gap-4 text-sm">
                 <div>
-                  <p className="text-foreground mb-1 font-medium">Instrumentation</p>
+                  <p className="text-foreground mb-1 font-medium">
+                    Instrumentation
+                  </p>
                   <p className="text-muted-foreground">{cue.instrumentation}</p>
                 </div>
                 <div>
-                  <p className="text-foreground mb-2 font-medium">Source tracks</p>
+                  <p className="text-foreground mb-2 font-medium">
+                    Source tracks
+                  </p>
                   <div className="flex flex-wrap gap-2">
                     {cue.sourceTracks.map((trackName) => (
                       <Badge key={trackName} variant="default">
@@ -454,7 +464,7 @@ function AudioFeatureAnalysisPage({
           <StatCard
             label="Median BPM"
             value={`${analysis.aggregates.tempo.median}`}
-            helper={`${analysis.trackCount} analysed tracks`}
+            helper={`${analysis.trackCount} analyzed tracks`}
             testId="stat-median-bpm"
           />
           <MeterCard
@@ -488,10 +498,22 @@ function AudioFeatureAnalysisPage({
                 </CardDescription>
               </CardHeader>
               <CardContent className="grid gap-3 text-sm">
-                <ClusterMetric label="Suggested cue" value={cluster.suggestedGameCue} />
-                <ClusterMetric label="Target BPM" value={`${cluster.targetBpm}`} />
-                <ClusterMetric label="Recommended key" value={cluster.recommendedKey} />
-                <ClusterMetric label="Waveform" value={cluster.waveformSuggestion} />
+                <ClusterMetric
+                  label="Suggested cue"
+                  value={cluster.suggestedGameCue}
+                />
+                <ClusterMetric
+                  label="Target BPM"
+                  value={`${cluster.targetBpm}`}
+                />
+                <ClusterMetric
+                  label="Recommended key"
+                  value={cluster.recommendedKey}
+                />
+                <ClusterMetric
+                  label="Waveform"
+                  value={cluster.waveformSuggestion}
+                />
               </CardContent>
             </Card>
           ))}
@@ -504,7 +526,9 @@ function AudioFeatureAnalysisPage({
           {analysis.chordPalette.map((progression) => (
             <Card key={progression.roman}>
               <CardHeader>
-                <CardTitle className="font-mono text-lg">{progression.roman}</CardTitle>
+                <CardTitle className="font-mono text-lg">
+                  {progression.roman}
+                </CardTitle>
                 <CardDescription>{progression.chords}</CardDescription>
               </CardHeader>
               <CardContent className="text-muted-foreground text-sm">
@@ -575,7 +599,9 @@ function AnalysisShell({
             <ChipmapLogo className="h-12 w-12" />
             <div>
               <p className="font-semibold">Chipmap</p>
-              <p className="text-muted-foreground text-sm">{sidebarModeLabel}</p>
+              <p className="text-muted-foreground text-sm">
+                {sidebarModeLabel}
+              </p>
             </div>
           </div>
 
@@ -613,7 +639,8 @@ function AnalysisShell({
                   <div className="min-w-0 flex-1">
                     <p className="truncate font-medium">{entry.playlistName}</p>
                     <p className="text-muted-foreground mt-1 text-xs">
-                      {entry.trackCount} track{entry.trackCount === 1 ? "" : "s"}
+                      {entry.trackCount} track
+                      {entry.trackCount === 1 ? "" : "s"}
                     </p>
                   </div>
                   <EraBadge era={entry.era} />
@@ -715,7 +742,9 @@ function StatCard({
         <CardDescription>{label}</CardDescription>
         <CardTitle className="text-2xl">{value}</CardTitle>
       </CardHeader>
-      <CardContent className="text-muted-foreground text-sm">{helper}</CardContent>
+      <CardContent className="text-muted-foreground text-sm">
+        {helper}
+      </CardContent>
     </Card>
   );
 }
@@ -772,11 +801,21 @@ function DrumPatternRow({
   activeClassName: string;
   testId: string;
 }>) {
+  const stepValues = steps.split("");
+
   return (
-    <div className="grid grid-cols-[40px_1fr] items-center gap-3" data-testid={testId}>
+    <div
+      className="grid grid-cols-[40px_1fr] items-center gap-3"
+      data-testid={testId}
+    >
       <span className="text-muted-foreground font-mono text-sm">{label}</span>
-      <div className="grid grid-cols-[repeat(16,minmax(0,1fr))] gap-1">
-        {steps.split("").map((step, index) => (
+      <div
+        className="grid gap-1"
+        style={{
+          gridTemplateColumns: `repeat(${stepValues.length}, minmax(0, 1fr))`,
+        }}
+      >
+        {stepValues.map((step, index) => (
           <div
             key={`${label}-${index}`}
             className={
