@@ -102,16 +102,17 @@ export function AnalysisRunner({
           </div>
 
           <p className="text-muted-foreground max-w-2xl text-sm sm:text-base">
-            Chipmap is pulling your Spotify tracks, batching audio features, and
-            translating the results into a retro starter pack. Large playlists
-            can take a few seconds.
+            Chipmap is importing your Spotify playlist, enriching it with artist
+            genres and release metadata, and turning that into a canonical
+            manifest plus a soundtrack brief. Large playlists can take a few
+            seconds.
           </p>
 
           <div className="mt-8 grid gap-3 sm:grid-cols-3">
             {[
               "Fetching playlist tracks",
-              "Collecting audio features",
-              "Building game-music starter pack",
+              "Enriching artist metadata",
+              "Building canonical manifest and cue map",
             ].map((step, index) => (
               <div
                 key={step}
@@ -149,7 +150,7 @@ function getAnalysisErrorCopy(
     return {
       title: "Spotify blocked audio-feature access for this app.",
       description:
-        "Chipmap can load your playlists, but Spotify refused the audio-features request needed to build an analysis. This is usually a Spotify app access limitation rather than a playlist bug.",
+        "Chipmap no longer depends on audio features for new runs. Refresh and re-run the playlist if you are seeing an older cached error state.",
     };
   }
 

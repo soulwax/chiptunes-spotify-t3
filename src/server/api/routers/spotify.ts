@@ -2,8 +2,8 @@ import { TRPCError } from "@trpc/server";
 import { desc, eq } from "drizzle-orm";
 import { z } from "zod";
 
-import { analyzeFeatures } from "~/lib/analysis";
 import { APP_ERROR_CODES, AppError } from "~/lib/errors";
+import { analyzePlaylistMetadata } from "~/lib/metadata-analysis";
 import {
   createTRPCRouter,
   protectedProcedure,
@@ -11,7 +11,7 @@ import {
 import { cachedAnalyses } from "~/server/db/schema";
 import {
   getAllPlaylists,
-  getAudioFeatures,
+  getArtistsByIds,
   getPlaylistMetadata,
   getPlaylistTracks,
 } from "~/server/spotify/client";
@@ -73,35 +73,50 @@ export const spotifyRouter = createTRPCRouter({
         });
       }
 
-      const featureResults = await getAudioFeatures(
+      const artistGenresResponse = await getArtistsByIds(
         ctx.session.spotifyAccessToken,
-        tracks.map((track) => track.id),
+        tracks.flatMap((track) =>
+          track.artists
+            .map((artist) => artist.id)
+            .filter((artistId): artistId is string => Boolean(artistId)),
+        ),
+      );
+      const artistGenres = new Map(
+        [...artistGenresResponse.entries()].map(([spotifyId, artist]) => [
+          spotifyId,
+          {
+            genres: artist.genres,
+            name: artist.name,
+            spotifyId,
+          },
+        ]),
       );
 
-      const matchedPairs = tracks
-        .map((track, index) => ({
-          track,
-          feature: featureResults[index],
-        }))
-        .filter(
-          (
-            value,
-          ): value is {
-            track: (typeof tracks)[number];
-            feature: NonNullable<(typeof featureResults)[number]>;
-          } => Boolean(value.feature),
-        );
-
-      if (matchedPairs.length === 0) {
-        throw new TRPCError({
-          code: "BAD_REQUEST",
-          message: "Spotify did not return usable audio features for this playlist.",
-        });
-      }
-
-      const matchedTracks = matchedPairs.map(({ track }) => track);
-      const matchedFeatures = matchedPairs.map(({ feature }) => feature);
-      const analysis = analyzeFeatures(matchedTracks, matchedFeatures);
+      const analysis = analyzePlaylistMetadata({
+        artistGenres,
+        playlistId: playlist.id,
+        playlistName: playlist.name,
+        tracks: tracks.map((track) => ({
+          album: {
+            imageUrl: track.album.imageUrl,
+            name: track.album.name,
+            releaseDate: track.album.releaseDate,
+            releaseYear: parseReleaseYear(track.album.releaseDate),
+            spotifyId: track.album.id,
+          },
+          artists: track.artists.map((artist) => ({
+            name: artist.name,
+            spotifyId: artist.id,
+          })),
+          durationMs: track.durationMs,
+          explicit: track.explicit,
+          isrc: track.isrc,
+          name: track.name,
+          popularity: track.popularity,
+          spotifyId: track.id,
+          spotifyUrl: track.spotifyUrl,
+        })),
+      });
 
       await ctx.db
         .insert(cachedAnalyses)
@@ -124,7 +139,6 @@ export const spotifyRouter = createTRPCRouter({
       return {
         playlistId: playlist.id,
         playlistName: playlist.name,
-        features: matchedFeatures,
         analysis,
       };
     }),
@@ -144,3 +158,12 @@ export const spotifyRouter = createTRPCRouter({
     }));
   }),
 });
+
+function parseReleaseYear(releaseDate: string | null) {
+  if (!releaseDate) {
+    return null;
+  }
+
+  const year = Number.parseInt(releaseDate.slice(0, 4), 10);
+  return Number.isFinite(year) ? year : null;
+}

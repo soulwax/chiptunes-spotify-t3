@@ -1,8 +1,8 @@
 # Chipmap
 
 Chipmap is a full-stack Spotify playlist analyzer built on the T3 stack. It
-turns playlist tempo, energy, valence, keys, and rhythmic patterns into a
-game-music starter pack for NES, SNES, and Genesis-inspired composition.
+imports playlist metadata from Spotify and turns it into a canonical manifest
+plus a retro soundtrack brief for NES, SNES, and Genesis-inspired composition.
 
 ## Stack
 
@@ -17,10 +17,10 @@ game-music starter pack for NES, SNES, and Genesis-inspired composition.
 
 1. Sign in with Spotify.
 2. Pick a playlist from your library.
-3. Fetch Spotify audio features for every analyzable track.
+3. Import track, artist, album, release-year, popularity, duration, and ISRC metadata.
 4. Generate Chipmap analysis output:
-   tempo ranges, dominant keys with Camelot codes, chord palettes, drum
-   patterns, cluster cues, and era-matched sound design references.
+   canonical manifests, release timelines, genre fingerprints, cue maps, and
+   era-matched soundtrack recommendations.
 
 ## Development
 
@@ -46,5 +46,14 @@ game-music starter pack for NES, SNES, and Genesis-inspired composition.
 ## Spotify Playlist Limits
 
 - Chipmap uses Spotify's current playlist items endpoint: `GET /playlists/{id}/items`.
-- In Spotify development-mode constraints, analysis may only work for playlists you own or collaborate on.
+- Chipmap now runs in metadata-first mode because Spotify blocks audio features for this app.
+- In Spotify development-mode constraints, metadata import may only work for playlists you own or collaborate on.
 - Followed playlists from other owners can still appear in the dashboard, but Chipmap marks them as view-only and does not send them into analysis.
+
+## Metadata-First Outputs
+
+- Canonical playlist manifest with track title, artists, album, release year, duration, popularity, Spotify URL, and ISRC where available
+- Genre fingerprint from artist enrichment
+- Release timeline and runtime profile
+- Retro soundtrack lens and cue map for title screen, overworld, town, dungeon, boss, and credits
+- Manifest and analysis JSON exports for later non-Spotify audio analysis

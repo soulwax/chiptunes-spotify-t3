@@ -1,5 +1,18 @@
 # Changelog
 
+## 0.3.0 - 2026-03-19
+
+### Changed
+
+- Pivoted Chipmap from blocked Spotify audio-feature analysis to a metadata-first soundtrack brief mode.
+- Reworked playlist analysis to import canonical manifests with track, artist, album, release-year, popularity, runtime, Spotify URL, and ISRC data.
+- Replaced the old BPM/key-centric analysis page with release timelines, genre fingerprints, cue maps, soundtrack-lens recommendations, and manifest export.
+
+### Fixed
+
+- Kept the existing playlist picker and cache flow working while routing new analyses through Spotify-supported metadata endpoints.
+- Added artist-genre enrichment fallback handling so manifest imports still succeed even if Spotify omits some artist metadata.
+
 ## 0.2.2 - 2026-03-19
 
 ### Fixed

@@ -17,19 +17,29 @@ export interface SpotifyPlaylistSummary {
 }
 
 export interface SpotifyPlaylistTrack {
+  album: {
+    id: string | null;
+    imageUrl: string | null;
+    name: string;
+    releaseDate: string | null;
+  };
+  artists: Array<{
+    id: string | null;
+    name: string;
+  }>;
+  durationMs: number;
+  explicit: boolean;
   id: string;
+  isrc: string | null;
   name: string;
+  popularity: number | null;
+  spotifyUrl: string | null;
 }
 
-export interface SpotifyAudioFeatureResponse {
+export interface SpotifyArtistMetadata {
+  genres: string[];
   id: string;
-  tempo: number;
-  energy: number;
-  valence: number;
-  danceability: number;
-  acousticness: number;
-  key: number;
-  mode: 0 | 1;
+  name: string;
 }
 
 type SpotifyForbiddenErrorConfig = {
@@ -124,14 +134,33 @@ export async function getPlaylistTracks(
 ) {
   const tracks: SpotifyPlaylistTrack[] = [];
   let nextUrl: string | null =
-    `/playlists/${playlistId}/items?limit=100&fields=items(track(id,name,type,is_local)),next`;
+    `/playlists/${playlistId}/items?limit=100&fields=items(track(id,name,type,is_local,artists(id,name),album(id,name,release_date,images(url)),duration_ms,explicit,popularity,external_ids(isrc),external_urls(spotify))),next`;
 
   while (nextUrl) {
     const page: {
       items: Array<{
         track: {
+          album: {
+            id: string | null;
+            images: Array<{ url: string }>;
+            name: string;
+            release_date: string | null;
+          };
+          artists: Array<{
+            id: string | null;
+            name: string;
+          }>;
+          duration_ms: number;
+          explicit: boolean;
+          external_ids?: {
+            isrc?: string | null;
+          };
+          external_urls?: {
+            spotify?: string | null;
+          };
           id: string | null;
           name: string;
+          popularity?: number | null;
           type: string;
           is_local?: boolean;
         } | null;
@@ -157,8 +186,23 @@ export async function getPlaylistTracks(
       }
 
       tracks.push({
+        album: {
+          id: track.album.id,
+          imageUrl: track.album.images[0]?.url ?? null,
+          name: track.album.name,
+          releaseDate: track.album.release_date,
+        },
+        artists: track.artists.map((artist) => ({
+          id: artist.id,
+          name: artist.name,
+        })),
+        durationMs: track.duration_ms,
+        explicit: track.explicit,
         id: track.id,
+        isrc: track.external_ids?.isrc ?? null,
         name: track.name,
+        popularity: track.popularity ?? null,
+        spotifyUrl: track.external_urls?.spotify ?? null,
       });
     }
 
@@ -178,33 +222,43 @@ export async function getPlaylistMetadata(
   );
 }
 
-export async function getAudioFeatures(
+export async function getArtistsByIds(
   accessToken: string,
-  trackIds: string[],
+  artistIds: string[],
 ) {
-  const uniqueIds = [...new Set(trackIds)];
-  const features = new Map<string, SpotifyAudioFeatureResponse>();
+  const uniqueIds = [...new Set(artistIds.filter(Boolean))];
+  const artists = new Map<string, SpotifyArtistMetadata>();
 
-  for (let index = 0; index < uniqueIds.length; index += 100) {
-    const batch = uniqueIds.slice(index, index + 100);
-    const response = await spotifyFetch<{
-      audio_features: Array<SpotifyAudioFeatureResponse | null>;
-    }>(accessToken, `/audio-features?ids=${batch.join(",")}`, {
-      forbiddenError: {
-        code: APP_ERROR_CODES.SPOTIFY_AUDIO_FEATURES_UNAVAILABLE,
-        message:
-          "Spotify blocked audio-feature access for this app, so Chipmap cannot analyze this playlist right now.",
-      },
-    });
+  for (let index = 0; index < uniqueIds.length; index += 50) {
+    const batch = uniqueIds.slice(index, index + 50);
 
-    for (const feature of response.audio_features) {
-      if (!feature?.id) {
-        continue;
+    try {
+      const response = await spotifyFetch<{
+        artists: Array<{
+          genres?: string[];
+          id: string;
+          name: string;
+        } | null>;
+      }>(accessToken, `/artists?ids=${batch.join(",")}`);
+
+      for (const artist of response.artists) {
+        if (!artist?.id) {
+          continue;
+        }
+
+        artists.set(artist.id, {
+          genres: artist.genres ?? [],
+          id: artist.id,
+          name: artist.name,
+        });
       }
-
-      features.set(feature.id, feature);
+    } catch (error) {
+      console.error("Spotify artist enrichment failed", {
+        batchSize: batch.length,
+        error,
+      });
     }
   }
 
-  return trackIds.map((trackId) => features.get(trackId) ?? null);
+  return artists;
 }

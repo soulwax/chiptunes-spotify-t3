@@ -9,7 +9,7 @@ import {
   uniqueIndex,
 } from "drizzle-orm/pg-core";
 
-import { type ChipmapAnalysis } from "~/lib/analysis";
+import { type ChipmapAnalysis } from "~/lib/metadata-analysis";
 
 export const createTable = pgTableCreator((name) => `spotify2chip_${name}`);
 

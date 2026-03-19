@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import {
   Bar,
   BarChart,
@@ -11,7 +12,12 @@ import {
   YAxis,
 } from "recharts";
 
-import { type ChipmapAnalysis } from "~/lib/analysis";
+import {
+  formatDuration,
+  isMetadataAnalysis,
+  type ChipmapAnalysis,
+  type ChipmapMetadataAnalysis,
+} from "~/lib/metadata-analysis";
 import { Badge } from "~/components/ui/badge";
 import { Button } from "~/components/ui/button";
 import {
@@ -33,22 +39,45 @@ export function AnalysisView({
   playlistName,
   analysis,
 }: AnalysisViewProps) {
-  function handleExport() {
-    const blob = new Blob([JSON.stringify(analysis, null, 2)], {
+  if (!isMetadataAnalysis(analysis)) {
+    return <LegacyAnalysisNotice playlistId={playlistId} />;
+  }
+
+  return (
+    <MetadataAnalysisView
+      playlistId={playlistId}
+      playlistName={playlistName}
+      analysis={analysis}
+    />
+  );
+}
+
+function MetadataAnalysisView({
+  playlistId,
+  playlistName,
+  analysis,
+}: Readonly<{
+  playlistId: string;
+  playlistName: string;
+  analysis: ChipmapMetadataAnalysis;
+}>) {
+  function downloadJson(filename: string, payload: unknown) {
+    const blob = new Blob([JSON.stringify(payload, null, 2)], {
       type: "application/json",
     });
     const url = URL.createObjectURL(blob);
     const link = document.createElement("a");
     link.href = url;
-    link.download = `${
-      playlistName
-        .toLowerCase()
-        .replace(/[^a-z0-9]+/g, "-")
-        .replace(/(^-|-$)/g, "") || playlistId
-    }-chipmap-analysis.json`;
+    link.download = filename;
     link.click();
     URL.revokeObjectURL(url);
   }
+
+  const baseFilename =
+    playlistName
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, "-")
+      .replace(/(^-|-$)/g, "") || playlistId;
 
   return (
     <div className="chipmap-grid bg-background min-h-screen px-4 py-4 lg:px-6">
@@ -56,231 +85,313 @@ export function AnalysisView({
         <div className="border-border/80 mb-8 flex flex-col gap-4 border-b pb-6 lg:flex-row lg:items-end lg:justify-between">
           <div>
             <p className="text-accent mb-2 text-xs font-semibold tracking-[0.22em] uppercase">
-              Analysis
+              Metadata-First Analysis
             </p>
             <div className="flex flex-wrap items-center gap-3">
-              <h1 className="text-3xl font-semibold tracking-tight sm:text-4xl">
+              <h1
+                className="text-3xl font-semibold tracking-tight sm:text-4xl"
+                data-testid="analysis-title"
+              >
                 {playlistName}
               </h1>
               <EraBadge era={analysis.era} />
+              <Badge variant="green" data-testid="analysis-mode-badge">
+                Canonical Manifest
+              </Badge>
             </div>
+            <p className="text-muted-foreground mt-3 max-w-2xl text-sm sm:text-base">
+              Spotify can still import your playlist cleanly even when audio
+              features are blocked. Chipmap now turns that metadata into a
+              soundtrack brief and a reusable manifest for later open-audio
+              analysis.
+            </p>
           </div>
-          <Button onClick={handleExport} data-testid="export-analysis-button">
-            Export JSON
-          </Button>
+          <div className="flex flex-wrap gap-3">
+            <Button
+              variant="outline"
+              onClick={() =>
+                downloadJson(
+                  `${baseFilename}-chipmap-manifest.json`,
+                  analysis.manifest,
+                )
+              }
+              data-testid="export-manifest-button"
+            >
+              Export Manifest
+            </Button>
+            <Button
+              onClick={() =>
+                downloadJson(
+                  `${baseFilename}-chipmap-metadata-analysis.json`,
+                  analysis,
+                )
+              }
+              data-testid="export-analysis-button"
+            >
+              Export Analysis
+            </Button>
+          </div>
         </div>
 
         <div className="space-y-8">
           <section data-testid="overview-section">
-            <StickyHeading title="Overview Stats" />
+            <StickyHeading title="Overview" />
             <div className="grid gap-4 lg:grid-cols-4">
               <StatCard
-                label="Median BPM"
-                value={`${analysis.aggregates.tempo.median}`}
-                helper={`${analysis.bpmBucket.toUpperCase()} pacing`}
-                testId="stat-median-bpm"
-              />
-              <MeterCard
-                label="Energy"
-                value={analysis.aggregates.energy.median}
-                testId="stat-energy"
-              />
-              <MeterCard
-                label="Valence"
-                value={analysis.aggregates.valence.median}
-                testId="stat-valence"
+                label="Tracks"
+                value={`${analysis.trackCount}`}
+                helper={`${analysis.overview.uniqueArtistCount} artists across ${analysis.overview.uniqueAlbumCount} albums`}
+                testId="stat-track-count"
               />
               <StatCard
-                label="Top Key"
-                value={analysis.topKey.label}
-                helper={`${analysis.topKey.count} tracks in the dominant center`}
-                testId="stat-top-key"
+                label="Runtime"
+                value={formatDuration(analysis.overview.totalRuntimeMs)}
+                helper={`Avg track ${formatDuration(analysis.overview.averageTrackDurationMs)}`}
+                testId="stat-runtime"
+              />
+              <MeterCard
+                label="Explicit Ratio"
+                value={analysis.overview.explicitRatio}
+                formatter={(value) => `${Math.round(value * 100)}%`}
+                testId="stat-explicit-ratio"
+              />
+              <MeterCard
+                label="ISRC Coverage"
+                value={analysis.overview.isrcCoverageRatio}
+                formatter={(value) => `${Math.round(value * 100)}%`}
+                testId="stat-isrc-coverage"
+              />
+            </div>
+            <div className="mt-4 grid gap-4 lg:grid-cols-3">
+              <InlineMetric
+                label="Median Popularity"
+                testId="stat-median-popularity"
+                value={`${analysis.popularity.median}`}
+              />
+              <InlineMetric
+                label="Median Track Length"
+                testId="stat-median-track-length"
+                value={formatDuration(analysis.trackLength.median)}
+              />
+              <InlineMetric
+                label="Median Release Year"
+                testId="stat-median-release-year"
+                value={
+                  analysis.releaseProfile.medianYear
+                    ? `${analysis.releaseProfile.medianYear}`
+                    : "Unknown"
+                }
               />
             </div>
           </section>
 
-          <section data-testid="bpm-distribution-section">
-            <StickyHeading title="BPM Distribution" />
+          <section data-testid="release-profile-section">
+            <StickyHeading title="Release Timeline" />
             <Card>
               <CardContent className="p-5 sm:p-6">
-                <div className="h-80" data-testid="bpm-distribution-chart">
-                  <ResponsiveContainer width="100%" height="100%">
-                    <BarChart data={analysis.bpmDistribution} layout="vertical">
-                      <CartesianGrid
-                        horizontal={false}
-                        stroke="hsl(var(--border))"
-                      />
-                      <XAxis
-                        type="number"
-                        stroke="hsl(var(--muted-foreground))"
-                      />
-                      <YAxis
-                        dataKey="label"
-                        type="category"
-                        stroke="hsl(var(--muted-foreground))"
-                        width={72}
-                      />
-                      <Tooltip
-                        cursor={{ fill: "hsl(var(--secondary) / 0.45)" }}
-                        contentStyle={{
-                          background: "hsl(var(--card))",
-                          border: "1px solid hsl(var(--border))",
-                          borderRadius: "16px",
-                          color: "hsl(var(--foreground))",
-                        }}
-                      />
-                      <Bar dataKey="count" radius={[0, 10, 10, 0]}>
-                        {analysis.bpmDistribution.map((bucket) => (
-                          <Cell
-                            key={bucket.label}
-                            fill={
-                              bucket.isMedianBucket
-                                ? "hsl(var(--accent))"
-                                : "hsl(var(--secondary-foreground) / 0.32)"
-                            }
-                          />
-                        ))}
-                      </Bar>
-                    </BarChart>
-                  </ResponsiveContainer>
-                </div>
+                {analysis.releaseProfile.distribution.length > 0 ? (
+                  <div className="h-72" data-testid="release-timeline-chart">
+                    <ResponsiveContainer width="100%" height="100%">
+                      <BarChart data={analysis.releaseProfile.distribution}>
+                        <CartesianGrid
+                          vertical={false}
+                          stroke="hsl(var(--border))"
+                        />
+                        <XAxis
+                          dataKey="label"
+                          stroke="hsl(var(--muted-foreground))"
+                        />
+                        <YAxis stroke="hsl(var(--muted-foreground))" />
+                        <Tooltip
+                          cursor={{ fill: "hsl(var(--secondary) / 0.45)" }}
+                          contentStyle={{
+                            background: "hsl(var(--card))",
+                            border: "1px solid hsl(var(--border))",
+                            borderRadius: "16px",
+                            color: "hsl(var(--foreground))",
+                          }}
+                        />
+                        <Bar dataKey="count" radius={[10, 10, 0, 0]}>
+                          {analysis.releaseProfile.distribution.map((bucket) => (
+                            <Cell
+                              key={bucket.label}
+                              fill={
+                                bucket.isMedianBucket
+                                  ? "hsl(var(--accent))"
+                                  : "hsl(var(--secondary-foreground) / 0.32)"
+                              }
+                            />
+                          ))}
+                        </Bar>
+                      </BarChart>
+                    </ResponsiveContainer>
+                  </div>
+                ) : (
+                  <div
+                    className="text-muted-foreground rounded-2xl border border-dashed border-border p-8 text-sm"
+                    data-testid="release-timeline-empty"
+                  >
+                    Release years were missing from the imported track metadata.
+                  </div>
+                )}
 
                 <div className="border-border bg-secondary/45 mt-4 rounded-2xl border p-4">
-                  <div className="mb-2 flex items-center gap-3">
-                    <Badge variant="teal">{analysis.bpmBucket}</Badge>
+                  <div className="mb-2 flex flex-wrap items-center gap-3">
+                    <Badge variant="teal">
+                      {analysis.releaseProfile.earliestYear ?? "?"} to{" "}
+                      {analysis.releaseProfile.latestYear ?? "?"}
+                    </Badge>
                     <span className="text-muted-foreground text-sm">
-                      Median bucket highlighted in teal
+                      Median decade highlighted in teal
                     </span>
                   </div>
                   <p className="text-muted-foreground text-sm">
-                    {analysis.bpmBucketDescription}
+                    This timeline becomes especially useful once you start
+                    matching the manifest to local audio or archival metadata.
                   </p>
                 </div>
               </CardContent>
             </Card>
           </section>
 
-          <section data-testid="cluster-map-section">
-            <StickyHeading title="Energy x Valence Cluster Map" />
-            <div className="grid gap-4 lg:grid-cols-2">
-              {analysis.clusters.map((cluster) => (
-                <Card key={cluster.id} data-testid={`cluster-${cluster.id}`}>
-                  <CardHeader>
-                    <div className="flex items-center justify-between gap-3">
-                      <CardTitle>{cluster.label}</CardTitle>
-                      <Badge variant="teal">{cluster.count} tracks</Badge>
-                    </div>
-                    <CardDescription>
-                      {cluster.suggestedGameCue}
-                    </CardDescription>
-                  </CardHeader>
-                  <CardContent className="text-muted-foreground grid gap-3 text-sm">
-                    <div className="flex items-center justify-between gap-4">
-                      <span>Target BPM</span>
-                      <span className="text-foreground font-semibold">
-                        {cluster.targetBpm}
-                      </span>
-                    </div>
-                    <div className="flex items-center justify-between gap-4">
-                      <span>Recommended Key</span>
-                      <span className="text-foreground font-semibold">
-                        {cluster.recommendedKey}
-                      </span>
-                    </div>
-                    <div className="flex items-center justify-between gap-4">
-                      <span>Waveform</span>
-                      <span className="text-foreground font-semibold">
-                        {cluster.waveformSuggestion}
-                      </span>
-                    </div>
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
-          </section>
-
-          <section data-testid="chord-palette-section">
-            <StickyHeading title="Chord Palette" />
-            <div className="grid gap-4 xl:grid-cols-3">
-              {analysis.chordPalette.map((progression) => (
+          <section data-testid="genre-section">
+            <StickyHeading title="Genre Fingerprint" />
+            <div className="grid gap-4 lg:grid-cols-2 xl:grid-cols-4">
+              {analysis.genres.map((genre) => (
                 <Card
-                  key={progression.roman}
-                  data-testid={`chord-${progression.roman}`}
+                  key={genre.genre}
+                  data-testid={`genre-${genre.genre.replace(/[^a-z0-9]+/gi, "-").toLowerCase()}`}
                 >
-                  <CardHeader>
-                    <CardTitle className="font-mono text-base">
-                      {progression.roman}
-                    </CardTitle>
-                    <CardDescription>{progression.chords}</CardDescription>
+                  <CardHeader className="pb-3">
+                    <CardTitle className="text-base">{genre.genre}</CardTitle>
+                    <CardDescription>{genre.count} tracks tagged</CardDescription>
                   </CardHeader>
-                  <CardContent className="text-muted-foreground text-sm">
-                    {progression.description}
+                  <CardContent>
+                    <div className="bg-secondary h-2 rounded-full">
+                      <div
+                        className="bg-accent h-2 rounded-full"
+                        style={{ width: `${Math.max(8, genre.share * 100)}%` }}
+                      />
+                    </div>
+                    <p className="text-muted-foreground mt-3 text-sm">
+                      {Math.round(genre.share * 100)}% of imported tracks carry
+                      this signal.
+                    </p>
                   </CardContent>
                 </Card>
               ))}
             </div>
           </section>
 
-          <section data-testid="drum-pattern-section">
-            <StickyHeading title="Drum Patterns" />
+          <section data-testid="soundtrack-profile-section">
+            <StickyHeading title="Soundtrack Lens" />
             <Card>
               <CardHeader>
                 <div className="flex flex-wrap items-center gap-3">
-                  <CardTitle>{analysis.drumPattern.name}</CardTitle>
-                  <Badge variant="amber">
-                    {analysis.drumPattern.bpmBucket}
-                  </Badge>
+                  <CardTitle>{analysis.soundtrackProfile.title}</CardTitle>
+                  <EraBadge era={analysis.era} />
                 </div>
                 <CardDescription>
-                  {analysis.drumPattern.context}
+                  {analysis.soundtrackProfile.description}
                 </CardDescription>
               </CardHeader>
-              <CardContent>
-                <DrumRow
-                  label="K"
-                  pattern={analysis.drumPattern.kick}
-                  colorClass="bg-[hsl(var(--amber))]"
-                  testId="drum-kick-row"
-                />
-                <DrumRow
-                  label="S"
-                  pattern={analysis.drumPattern.snare}
-                  colorClass="bg-accent"
-                  testId="drum-snare-row"
-                />
-                <DrumRow
-                  label="HH"
-                  pattern={analysis.drumPattern.hiHat}
-                  colorClass="bg-muted-foreground"
-                  testId="drum-hihat-row"
-                />
+              <CardContent className="grid gap-3">
+                {analysis.soundtrackProfile.reasons.map((reason) => (
+                  <div
+                    key={reason}
+                    className="border-border bg-secondary/40 rounded-2xl border p-4 text-sm text-muted-foreground"
+                    data-testid="soundtrack-profile-reason"
+                  >
+                    {reason}
+                  </div>
+                ))}
               </CardContent>
             </Card>
           </section>
 
-          <section data-testid="sound-design-section">
-            <StickyHeading title="Sound Design Reference" />
+          <section data-testid="cue-map-section">
+            <StickyHeading title="Cue Map" />
+            <div className="grid gap-4 xl:grid-cols-2">
+              {analysis.cueMap.map((cue) => (
+                <Card key={cue.id} data-testid={`cue-${cue.id}`}>
+                  <CardHeader>
+                    <CardTitle>{cue.title}</CardTitle>
+                    <CardDescription>{cue.description}</CardDescription>
+                  </CardHeader>
+                  <CardContent className="grid gap-4 text-sm">
+                    <div>
+                      <p className="mb-1 font-medium text-foreground">
+                        Instrumentation
+                      </p>
+                      <p className="text-muted-foreground">{cue.instrumentation}</p>
+                    </div>
+                    <div>
+                      <p className="mb-1 font-medium text-foreground">
+                        Why this cue fits
+                      </p>
+                      <p className="text-muted-foreground">{cue.rationale}</p>
+                    </div>
+                    <div>
+                      <p className="mb-2 font-medium text-foreground">
+                        Source tracks
+                      </p>
+                      <div className="flex flex-wrap gap-2">
+                        {cue.sourceTracks.map((trackName) => (
+                          <Badge
+                            key={trackName}
+                            variant="default"
+                            data-testid={`cue-track-${cue.id}`}
+                          >
+                            {trackName}
+                          </Badge>
+                        ))}
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          </section>
+
+          <section data-testid="manifest-preview-section">
+            <StickyHeading title="Canonical Manifest Preview" />
             <Card>
               <CardContent className="overflow-x-auto p-0">
                 <table className="min-w-full text-left text-sm">
-                  <thead className="bg-secondary/50 text-muted-foreground text-xs tracking-[0.18em] uppercase">
+                  <thead className="bg-secondary/50 text-muted-foreground text-xs uppercase tracking-[0.18em]">
                     <tr>
-                      <th className="px-5 py-4">Waveform</th>
-                      <th className="px-5 py-4">Character</th>
-                      <th className="px-5 py-4">Best Use</th>
+                      <th className="px-5 py-4">Track</th>
+                      <th className="px-5 py-4">Artists</th>
+                      <th className="px-5 py-4">Album</th>
+                      <th className="px-5 py-4">Year</th>
+                      <th className="px-5 py-4">ISRC</th>
                     </tr>
                   </thead>
-                  <tbody data-testid="sound-design-table">
-                    {analysis.soundDesignReference.map((row) => (
-                      <tr key={row.waveform} className="border-border border-t">
-                        <td className="text-foreground px-5 py-4 font-medium">
-                          {row.waveform}
+                  <tbody data-testid="manifest-preview-table">
+                    {analysis.manifest.tracks.slice(0, 12).map((track) => (
+                      <tr
+                        key={track.spotifyId}
+                        className="border-border border-t"
+                      >
+                        <td className="px-5 py-4">
+                          <div className="font-medium text-foreground">
+                            {track.title}
+                          </div>
+                          <div className="text-muted-foreground mt-1">
+                            {formatDuration(track.durationMs)}
+                          </div>
                         </td>
                         <td className="text-muted-foreground px-5 py-4">
-                          {row.character}
+                          {track.artists.map((artist) => artist.name).join(", ")}
                         </td>
                         <td className="text-muted-foreground px-5 py-4">
-                          {row.bestUse}
+                          {track.albumName}
+                        </td>
+                        <td className="text-muted-foreground px-5 py-4">
+                          {track.releaseYear ?? "Unknown"}
+                        </td>
+                        <td className="text-muted-foreground px-5 py-4 font-mono">
+                          {track.isrc ?? "Missing"}
                         </td>
                       </tr>
                     ))}
@@ -289,8 +400,50 @@ export function AnalysisView({
               </CardContent>
             </Card>
           </section>
+
+          <section data-testid="next-steps-section">
+            <StickyHeading title="Next Steps" />
+            <div className="grid gap-3">
+              {analysis.nextSteps.map((step) => (
+                <Card key={step} data-testid="next-step-card">
+                  <CardContent className="p-5 text-sm text-muted-foreground">
+                    {step}
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          </section>
         </div>
       </div>
+    </div>
+  );
+}
+
+function LegacyAnalysisNotice({
+  playlistId,
+}: Readonly<{
+  playlistId: string;
+}>) {
+  return (
+    <div className="chipmap-grid bg-background flex min-h-screen items-center justify-center px-4 py-8">
+      <Card className="w-full max-w-xl" data-testid="legacy-analysis-notice">
+        <CardHeader>
+          <CardTitle>That cached analysis uses the old audio-feature mode.</CardTitle>
+          <CardDescription>
+            Chipmap now runs in metadata-first mode because Spotify blocks audio
+            features for this app. Re-run the playlist to import a canonical
+            manifest and generate the new soundtrack brief.
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="flex gap-3">
+          <Button asChild data-testid="rerun-metadata-analysis-button">
+            <Link href={`/analysis/${playlistId}?run=1`}>Re-run Playlist</Link>
+          </Button>
+          <Button asChild variant="outline" data-testid="legacy-back-button">
+            <Link href="/dashboard">Back to Dashboard</Link>
+          </Button>
+        </CardContent>
+      </Card>
     </div>
   );
 }
@@ -330,7 +483,7 @@ function StatCard({
         <CardDescription>{label}</CardDescription>
         <CardTitle className="text-2xl">{value}</CardTitle>
       </CardHeader>
-      <CardContent className="text-muted-foreground text-sm">
+      <CardContent className="text-sm text-muted-foreground">
         {helper}
       </CardContent>
     </Card>
@@ -340,17 +493,19 @@ function StatCard({
 function MeterCard({
   label,
   value,
+  formatter,
   testId,
 }: Readonly<{
   label: string;
   value: number;
+  formatter: (value: number) => string;
   testId: string;
 }>) {
   return (
     <Card data-testid={testId}>
       <CardHeader className="pb-2">
         <CardDescription>{label}</CardDescription>
-        <CardTitle className="text-2xl">{value.toFixed(3)}</CardTitle>
+        <CardTitle className="text-2xl">{formatter(value)}</CardTitle>
       </CardHeader>
       <CardContent>
         <div className="bg-secondary h-2 rounded-full">
@@ -364,35 +519,22 @@ function MeterCard({
   );
 }
 
-function DrumRow({
+function InlineMetric({
   label,
-  pattern,
-  colorClass,
   testId,
+  value,
 }: Readonly<{
   label: string;
-  pattern: string;
-  colorClass: string;
   testId: string;
+  value: string;
 }>) {
   return (
-    <div className="mb-4 last:mb-0" data-testid={testId}>
-      <div className="mb-2 flex items-center gap-3">
-        <span className="text-muted-foreground w-8 font-mono text-sm">
-          {label}
-        </span>
-        <span className="text-muted-foreground font-mono text-xs tracking-[0.2em]">
-          {pattern}
-        </span>
-      </div>
-      <div className="grid grid-cols-16 gap-2">
-        {pattern.split("").map((step, index) => (
-          <div
-            key={`${label}-${index}`}
-            className={`border-border h-6 rounded-md border ${step === "*" ? colorClass : "bg-secondary/70"}`}
-          />
-        ))}
-      </div>
+    <div
+      className="border-border bg-card flex items-center justify-between rounded-2xl border px-4 py-3"
+      data-testid={testId}
+    >
+      <span className="text-sm text-muted-foreground">{label}</span>
+      <span className="font-semibold text-foreground">{value}</span>
     </div>
   );
 }

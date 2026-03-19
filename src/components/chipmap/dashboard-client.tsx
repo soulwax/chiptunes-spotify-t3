@@ -210,8 +210,8 @@ export function DashboardClient({ user }: DashboardClientProps) {
               </div>
             </div>
             <p className="text-muted-foreground text-sm">
-              Pull tempo, mood, and key trends from your Spotify library, then
-              turn them into retro composition prompts.
+              Import playlist metadata from Spotify, export canonical manifests,
+              and turn genre and era signals into retro composition prompts.
             </p>
           </div>
         </aside>
@@ -226,8 +226,9 @@ export function DashboardClient({ user }: DashboardClientProps) {
                 Pick a playlist to map.
               </h1>
               <p className="text-muted-foreground mt-2 max-w-2xl text-sm sm:text-base">
-                Chipmap pulls tempo, energy, valence, key centers, and pattern
-                cues from your Spotify playlists to build a retro starter pack.
+                Chipmap imports Spotify playlist metadata, then turns genres,
+                release eras, runtime, and artist signals into a soundtrack
+                brief you can export and build on.
               </p>
             </div>
           </div>
@@ -237,9 +238,9 @@ export function DashboardClient({ user }: DashboardClientProps) {
               className="border-border/70 bg-card/70 mb-4 rounded-2xl border p-4 text-sm text-muted-foreground"
               data-testid="playlist-access-note"
             >
-              Spotify currently lets this app analyze playlists you own or
-              collaborate on. Followed playlists from other owners may appear as
-              view-only here.
+              Spotify currently lets this app import playlist items only for
+              playlists you own or collaborate on. Followed playlists from
+              other owners may appear as view-only here.
             </div>
 
             {playlistsQuery.isLoading ? (
@@ -294,7 +295,7 @@ export function DashboardClient({ user }: DashboardClientProps) {
                           variant={playlist.canAnalyze ? "teal" : "default"}
                           data-testid={`playlist-access-label-${playlist.id}`}
                         >
-                          {playlist.accessLabel}
+                          {playlist.canAnalyze ? "Import" : playlist.accessLabel}
                         </Badge>
                       </div>
                       <p
@@ -317,7 +318,7 @@ export function DashboardClient({ user }: DashboardClientProps) {
                           className="mt-3 text-sm text-amber-400"
                           data-testid={`playlist-analysis-disabled-${playlist.id}`}
                         >
-                          Pick an owned or collaborative playlist to analyze
+                          Pick an owned or collaborative playlist to import
                           this in Chipmap.
                         </p>
                       ) : null}

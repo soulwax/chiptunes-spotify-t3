@@ -29,8 +29,9 @@ export default async function HomePage() {
               Turn your playlist into game music
             </h1>
             <p className="text-muted-foreground mt-4 max-w-lg text-sm sm:text-base">
-              Sign in with Spotify to turn tempo, keys, and mood into a retro
-              starter pack for NES, SNES, and Genesis-inspired tracks.
+              Sign in with Spotify to import playlist metadata, build a
+              canonical manifest, and turn genres, release eras, and runtime
+              signals into a retro soundtrack brief.
             </p>
           </div>
 
@@ -45,13 +46,16 @@ export default async function HomePage() {
             </div>
             <ul className="text-muted-foreground space-y-2 text-sm">
               <li>
-                Median BPM, mood spread, and playable game-context buckets
+                Canonical manifests with track, artist, album, release year,
+                duration, popularity, and ISRC data
               </li>
               <li>
-                Dominant keys with Camelot codes and chord progression prompts
+                Genre fingerprints, release timelines, and soundtrack-era
+                recommendations
               </li>
               <li>
-                Drum grids, cluster cues, and era-matched sound design notes
+                Metadata-driven cue maps you can export for later open-audio
+                analysis
               </li>
             </ul>
           </div>
