@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { useMemo } from "react";
 import {
   Bar,
   BarChart,
@@ -18,6 +19,7 @@ import {
   type ChipmapAnalysis,
   type ChipmapMetadataAnalysis,
 } from "~/lib/metadata-analysis";
+import { toFileNameBase } from "~/lib/utils";
 import { Badge } from "~/components/ui/badge";
 import { Button } from "~/components/ui/button";
 import {
@@ -27,6 +29,7 @@ import {
   CardHeader,
   CardTitle,
 } from "~/components/ui/card";
+import { api } from "~/trpc/react";
 
 type AnalysisViewProps = {
   playlistId: string;
@@ -39,6 +42,34 @@ const MIN_METER_BAR_WIDTH_PERCENT = 6;
 
 function formatPercent(value: number) {
   return `${Math.round(value * 100)}%`;
+}
+
+function downloadFile(filename: string, content: string, mimeType: string) {
+  const blob = new Blob([content], { type: mimeType });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = filename;
+  link.click();
+  URL.revokeObjectURL(url);
+}
+
+function openPrintWindow(html: string, title: string) {
+  const printWindow = window.open("", "_blank", "noopener,noreferrer");
+
+  if (!printWindow) {
+    downloadFile(`${title}.html`, html, "text/html");
+    return;
+  }
+
+  printWindow.document.open();
+  printWindow.document.write(html);
+  printWindow.document.close();
+  printWindow.focus();
+  // Give the new document a moment to finish layout before triggering print.
+  window.setTimeout(() => {
+    printWindow.print();
+  }, 250);
 }
 
 export function AnalysisView({
@@ -68,23 +99,73 @@ function MetadataAnalysisView({
   playlistName: string;
   analysis: ChipmapMetadataAnalysis;
 }>) {
-  function downloadJson(filename: string, payload: unknown) {
-    const blob = new Blob([JSON.stringify(payload, null, 2)], {
-      type: "application/json",
-    });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement("a");
-    link.href = url;
-    link.download = filename;
-    link.click();
-    URL.revokeObjectURL(url);
+  const exportAnalysis = api.spotify.exportAnalysis.useQuery(
+    { playlistId },
+    {
+      enabled: false,
+      retry: false,
+    },
+  );
+  const fallbackFilenameBase = useMemo(
+    () => toFileNameBase(playlistName, playlistId),
+    [playlistId, playlistName],
+  );
+
+  async function getExportPayload() {
+    if (exportAnalysis.data?.playlistId === playlistId) {
+      return exportAnalysis.data;
+    }
+
+    const result = await exportAnalysis.refetch();
+
+    if (result.data) {
+      return result.data;
+    }
+
+    throw result.error instanceof Error
+      ? result.error
+      : new Error(
+          "Unable to prepare export. Please try again, and contact support if the issue persists.",
+        );
   }
 
-  const baseFilename =
-    playlistName
-      .toLowerCase()
-      .replace(/[^a-z0-9]+/g, "-")
-      .replace(/(^-|-$)/g, "") || playlistId;
+  async function handleExport(
+    format: "analysis-json" | "manifest-json" | "markdown" | "pdf",
+  ) {
+    const payload = await getExportPayload();
+
+    if (format === "analysis-json") {
+      downloadFile(
+        `${payload.filenameBase}-chipmap-metadata-analysis.json`,
+        JSON.stringify(payload.analysis, null, 2),
+        "application/json",
+      );
+      return;
+    }
+
+    if (format === "manifest-json") {
+      downloadFile(
+        `${payload.filenameBase}-chipmap-manifest.json`,
+        JSON.stringify(payload.manifest, null, 2),
+        "application/json",
+      );
+      return;
+    }
+
+    if (format === "markdown") {
+      downloadFile(
+        `${payload.filenameBase}-chipmap-starter-pack.md`,
+        payload.starterPackMarkdown,
+        "text/markdown",
+      );
+      return;
+    }
+
+    openPrintWindow(
+      payload.pdfHtml,
+      `${payload.filenameBase}-chipmap-starter-pack`,
+    );
+  }
 
   return (
     <div className="chipmap-grid bg-background min-h-screen px-4 py-4 lg:px-6">
@@ -113,34 +194,75 @@ function MetadataAnalysisView({
               analysis.
             </p>
           </div>
-          <div className="flex flex-wrap gap-3">
-            <Button
-              variant="outline"
-              onClick={() =>
-                downloadJson(
-                  `${baseFilename}-chipmap-manifest.json`,
-                  analysis.manifest,
-                )
-              }
-              data-testid="export-manifest-button"
-            >
-              Export Manifest
-            </Button>
-            <Button
-              onClick={() =>
-                downloadJson(
-                  `${baseFilename}-chipmap-metadata-analysis.json`,
-                  analysis,
-                )
-              }
-              data-testid="export-analysis-button"
-            >
-              Export Analysis
-            </Button>
-          </div>
         </div>
 
         <div className="space-y-8">
+          <section data-testid="export-section">
+            <StickyHeading title="Export Starter Pack" />
+            <Card>
+              <CardHeader>
+                <CardTitle>Export Formats</CardTitle>
+                <CardDescription>
+                  Download the starter pack as JSON or Markdown, or open a
+                  print-ready brief you can save as PDF.
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="flex flex-wrap gap-3">
+                  <Button
+                    variant="outline"
+                    onClick={() => void handleExport("analysis-json")}
+                    disabled={exportAnalysis.isFetching}
+                    data-testid="export-analysis-button"
+                  >
+                    Analysis JSON
+                  </Button>
+                  <Button
+                    variant="outline"
+                    onClick={() => void handleExport("manifest-json")}
+                    disabled={exportAnalysis.isFetching}
+                    data-testid="export-manifest-button"
+                  >
+                    Manifest JSON
+                  </Button>
+                  <Button
+                    variant="outline"
+                    onClick={() => void handleExport("markdown")}
+                    disabled={exportAnalysis.isFetching}
+                    data-testid="export-markdown-button"
+                  >
+                    Markdown Brief
+                  </Button>
+                  <Button
+                    onClick={() => void handleExport("pdf")}
+                    disabled={exportAnalysis.isFetching}
+                    data-testid="export-pdf-button"
+                  >
+                    PDF Brief
+                  </Button>
+                </div>
+
+                <div
+                  className="text-muted-foreground text-sm"
+                  data-testid="export-filename-hint"
+                >
+                  {exportAnalysis.isFetching
+                    ? "Preparing export payload..."
+                    : `Starter pack base filename: ${fallbackFilenameBase}`}
+                </div>
+
+                {exportAnalysis.error ? (
+                  <div
+                    className="border-border text-destructive rounded-2xl border border-dashed p-4 text-sm"
+                    data-testid="export-error-state"
+                  >
+                    {exportAnalysis.error.message}
+                  </div>
+                ) : null}
+              </CardContent>
+            </Card>
+          </section>
+
           <section data-testid="overview-section">
             <StickyHeading title="Overview" />
             <div className="grid gap-4 lg:grid-cols-4">
@@ -372,10 +494,7 @@ function MetadataAnalysisView({
             <StickyHeading title="Track Roles" />
             <div className="grid gap-4">
               {analysis.trackRoles.map((role) => (
-                <Card
-                  key={role.id}
-                  data-testid={`track-role-group-${role.id}`}
-                >
+                <Card key={role.id} data-testid={`track-role-group-${role.id}`}>
                   <CardHeader>
                     <div className="flex flex-wrap items-center gap-3">
                       <CardTitle>{role.title}</CardTitle>
@@ -393,10 +512,10 @@ function MetadataAnalysisView({
                         >
                           <div className="flex flex-wrap items-start justify-between gap-3">
                             <div className="min-w-0">
-                              <p className="truncate font-semibold text-foreground">
+                              <p className="text-foreground truncate font-semibold">
                                 {track.title}
                               </p>
-                              <p className="mt-1 text-sm text-muted-foreground">
+                              <p className="text-muted-foreground mt-1 text-sm">
                                 {track.artists.join(", ")}
                               </p>
                             </div>
@@ -414,7 +533,7 @@ function MetadataAnalysisView({
                           </div>
 
                           <p
-                            className="mt-3 text-sm text-muted-foreground"
+                            className="text-muted-foreground mt-3 text-sm"
                             data-testid={`track-role-reason-${role.id}-${track.spotifyId}`}
                           >
                             {track.explanation}

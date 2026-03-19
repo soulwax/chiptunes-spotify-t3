@@ -1,5 +1,18 @@
 # Changelog
 
+## 0.5.0 - 2026-03-19
+
+### Added
+
+- Added Starter Pack export actions for Analysis JSON, Manifest JSON, Markdown Brief, and PDF-style print export.
+- Added a protected `spotify.exportAnalysis` procedure that returns a normalized export payload for metadata-first analyses.
+- Added shared starter-pack brief generation so exports stay aligned across Markdown and print-ready HTML output.
+
+### Changed
+
+- Replaced the old two-button export header with a dedicated Export Starter Pack section on the analysis page.
+- Updated the roadmap status to reflect that Export Starter Pack v1 is now shipped in metadata-first mode, with MIDI export still pending.
+
 ## 0.4.0 - 2026-03-19
 
 ### Added

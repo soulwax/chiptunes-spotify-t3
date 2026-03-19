@@ -4,7 +4,7 @@
 
 ### 2-week MVP
 
-1. Export Starter Pack v1
+1. Export Starter Pack v1 [done in metadata-first mode, MIDI still pending]
 2. Track-to-Cue Assignment [done in metadata-first mode]
 3. Analysis polish
 
@@ -32,7 +32,7 @@ People analyze multiple playlists, revisit old analyses, and share links.
 
 ### Frontend
 
-- `FE-01 [P0]` Add an Export menu on `/analysis/[playlistId]` with actions for `JSON`, `Markdown Brief`, `PDF Brief`, and `MIDI Chords`.
+- `FE-01 [P0] [done in metadata-first mode except MIDI]` Add an Export menu on `/analysis/[playlistId]` with actions for `JSON`, `Markdown Brief`, `PDF Brief`, and `MIDI Chords`.
 - `FE-02 [P0] [done]` Add a `Track Roles` section on the analysis page showing every track grouped by scene: `Title`, `Overworld`, `Town`, `Dungeon`, `Boss`, `Victory`, `Credits`.
 - `FE-03 [P0] [done]` Show a one-line reason per track assignment, for example `148 BPM, low valence, high energy -> Boss`.
 - `FE-04 [P0]` Improve error states so Spotify limitations read clearly: `View-only playlist`, `Audio features unavailable`, `Token expired`.
@@ -43,7 +43,7 @@ People analyze multiple playlists, revisit old analyses, and share links.
 
 ### tRPC / backend
 
-- `BE-01 [P0]` Add `spotify.exportAnalysis` procedure that returns a normalized export payload for JSON, Markdown, and PDF rendering.
+- `BE-01 [P0] [done in metadata-first mode]` Add `spotify.exportAnalysis` procedure that returns a normalized export payload for JSON, Markdown, and PDF rendering.
 - `BE-02 [P0]` Add `spotify.getTrackRoleAssignments` procedure that returns per-track scene labels plus explanation metadata.
 - `BE-03 [P0]` Extend cached analysis payloads so role assignments and soundtrack blueprint data can be stored alongside the base analysis.
 - `BE-04 [P0]` Add `spotify.exportMidiChords` procedure or server action that builds a simple MIDI file from the chosen chord palette.
@@ -63,7 +63,7 @@ People analyze multiple playlists, revisit old analyses, and share links.
   - `Victory`: high valence, major bias
   - `Credits`: balanced mood, moderate tempo
 - `AN-03 [P0] [done in metadata-first mode]` Return explanation metadata per role assignment: matched rules, percentile placement, BPM bucket, key/mode.
-- `AN-04 [P0]` Add `buildStarterPackBrief(analysis)` to create export-ready Markdown/PDF sections.
+- `AN-04 [P0] [done in metadata-first mode]` Add `buildStarterPackBrief(analysis)` to create export-ready Markdown/PDF sections.
 - `AN-05 [P1]` Implement `generateSoundtrackBlueprint(analysis, assignments)` to turn one playlist into a full cue list.
 - `AN-06 [P1]` Implement `applyRemixConstraint(analysis, constraint)` so outputs can shift toward `SNES`, `Boss`, `Dark`, `Exploration`, and similar modes.
 - `AN-07 [P2]` Add note-sequence generation for short previews from cue definitions.
@@ -81,7 +81,7 @@ People analyze multiple playlists, revisit old analyses, and share links.
 ## Best first sprint
 
 1. Ship `Track Roles` [done in metadata-first mode]
-2. Ship `Export Starter Pack v1`
+2. Ship `Export Starter Pack v1` [done in metadata-first mode, MIDI still pending]
 3. Ship clearer Spotify limitation states
 
 Goal:

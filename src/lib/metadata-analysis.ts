@@ -156,6 +156,17 @@ export interface ChipmapMetadataAnalysis {
 
 export type ChipmapAnalysis = LegacyChipmapAnalysis | ChipmapMetadataAnalysis;
 
+export interface ChipmapStarterPackBriefSection {
+  body: string[];
+  title: string;
+}
+
+export interface ChipmapStarterPackBrief {
+  html: string;
+  markdown: string;
+  sections: ChipmapStarterPackBriefSection[];
+}
+
 type EraScore = {
   era: ChipmapEra;
   reasons: string[];
@@ -418,6 +429,88 @@ export function isMetadataAnalysis(
     "analysisMode" in analysis &&
     analysis.analysisMode === "metadata-first"
   );
+}
+
+export function buildStarterPackBrief(args: {
+  analysis: ChipmapMetadataAnalysis;
+  playlistName: string;
+}) {
+  const { analysis, playlistName } = args;
+  const sections: ChipmapStarterPackBriefSection[] = [
+    {
+      title: "Chipmap Summary",
+      body: [
+        `Playlist: ${playlistName}`,
+        `Era lens: ${analysis.era}`,
+        `Tracks: ${analysis.trackCount}`,
+        `Runtime: ${formatDuration(analysis.overview.totalRuntimeMs)}`,
+        `Artists / Albums: ${analysis.overview.uniqueArtistCount} artists across ${analysis.overview.uniqueAlbumCount} albums`,
+      ],
+    },
+    {
+      title: "Metadata Overview",
+      body: [
+        `Median track length: ${formatDuration(analysis.trackLength.median)}`,
+        `Median popularity: ${analysis.popularity.median}`,
+        `Median release year: ${analysis.releaseProfile.medianYear ?? "Unknown"}`,
+        `Explicit ratio: ${formatPercent(analysis.overview.explicitRatio)}`,
+        `ISRC coverage: ${formatPercent(analysis.overview.isrcCoverageRatio)}`,
+      ],
+    },
+    {
+      title: "Genre Fingerprint",
+      body:
+        analysis.genres.length > 0
+          ? analysis.genres.map(
+              (genre) =>
+                `${genre.genre}: ${genre.count} tracks (${formatPercent(genre.share)})`,
+            )
+          : ["No artist genre data was available for this playlist."],
+    },
+    {
+      title: "Soundtrack Lens",
+      body: [
+        analysis.soundtrackProfile.title,
+        analysis.soundtrackProfile.description,
+        ...analysis.soundtrackProfile.reasons,
+      ],
+    },
+    {
+      title: "Cue Map",
+      body: analysis.cueMap.flatMap((cue) => [
+        `${cue.title}: ${cue.description}`,
+        `Instrumentation: ${cue.instrumentation}`,
+        `Rationale: ${cue.rationale}`,
+        `Source tracks: ${cue.sourceTracks.join(", ") || "None"}`,
+      ]),
+    },
+    {
+      title: "Track Roles",
+      body: analysis.trackRoles.flatMap((role) => {
+        if (role.tracks.length === 0) {
+          return [`${role.title}: no assigned tracks`];
+        }
+
+        return [
+          `${role.title}: ${role.trackCount} tracks`,
+          ...role.tracks.map(
+            (track) =>
+              `${track.title} by ${track.artists.join(", ")} | ${track.explanation}`,
+          ),
+        ];
+      }),
+    },
+    {
+      title: "Next Steps",
+      body: analysis.nextSteps,
+    },
+  ];
+
+  return {
+    html: buildBriefHtml(playlistName, sections),
+    markdown: buildBriefMarkdown(playlistName, sections),
+    sections,
+  } satisfies ChipmapStarterPackBrief;
 }
 
 function createManifestTrack(
@@ -783,6 +876,126 @@ function buildNextSteps(playlistName: string) {
   ];
 }
 
+function buildBriefMarkdown(
+  playlistName: string,
+  sections: ChipmapStarterPackBriefSection[],
+) {
+  const lines: string[] = [`# ${playlistName} Starter Pack`, ""];
+
+  for (const section of sections) {
+    lines.push(`## ${section.title}`, "");
+
+    for (const item of section.body) {
+      lines.push(`- ${item}`);
+    }
+
+    lines.push("");
+  }
+
+  return lines.join("\n").trim();
+}
+
+function buildBriefHtml(
+  playlistName: string,
+  sections: ChipmapStarterPackBriefSection[],
+) {
+  const renderedSections = sections
+    .map(
+      (section) => `
+        <section class="section">
+          <h2>${escapeHtml(section.title)}</h2>
+          <ul>
+            ${section.body
+              .map((item) => `<li>${escapeHtml(item)}</li>`)
+              .join("")}
+          </ul>
+        </section>
+      `,
+    )
+    .join("");
+
+  return `<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>${escapeHtml(playlistName)} Starter Pack</title>
+    <style>
+      :root {
+        color-scheme: dark;
+      }
+
+      body {
+        background: #0e0d0b;
+        color: #e8e6e1;
+        font-family: Inter, Arial, sans-serif;
+        line-height: 1.55;
+        margin: 0;
+        padding: 32px;
+      }
+
+      main {
+        border: 1px solid #2e2c29;
+        border-radius: 24px;
+        margin: 0 auto;
+        max-width: 860px;
+        padding: 32px;
+      }
+
+      h1 {
+        font-size: 32px;
+        margin: 0 0 12px;
+      }
+
+      h2 {
+        border-bottom: 1px solid #2e2c29;
+        color: #4f98a3;
+        font-size: 18px;
+        margin: 0 0 12px;
+        padding-bottom: 8px;
+      }
+
+      p {
+        color: #8a8882;
+        margin: 0 0 24px;
+      }
+
+      section {
+        margin-top: 24px;
+      }
+
+      ul {
+        margin: 0;
+        padding-left: 20px;
+      }
+
+      li {
+        margin: 0 0 8px;
+      }
+
+      @media print {
+        body {
+          padding: 0;
+        }
+
+        main {
+          border: 0;
+          border-radius: 0;
+          max-width: none;
+          padding: 0;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <h1>${escapeHtml(playlistName)} Starter Pack</h1>
+      <p>Generated by Chipmap metadata-first mode.</p>
+      ${renderedSections}
+    </main>
+  </body>
+</html>`;
+}
+
 function summarizeMetric(values: number[], decimals: number): ChipmapSummaryMetric {
   const sortedValues = [...values].sort((left, right) => left - right);
 
@@ -848,6 +1061,22 @@ function cueRank(id: ChipmapTrackRoleId) {
   ];
 
   return order.indexOf(id);
+}
+
+function formatPercent(value: number) {
+  return `${Math.round(value * 100)}%`;
+}
+
+function escapeHtml(value: string) {
+  const entities: Record<string, string> = {
+    "&": "&amp;",
+    "<": "&lt;",
+    ">": "&gt;",
+    '"': "&quot;",
+    "'": "&#39;",
+  };
+
+  return value.replace(/[&<>"']/g, (character) => entities[character] ?? character);
 }
 
 export function formatDuration(durationMs: number) {

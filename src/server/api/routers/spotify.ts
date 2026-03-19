@@ -1,9 +1,14 @@
 import { TRPCError } from "@trpc/server";
-import { desc, eq } from "drizzle-orm";
+import { and, desc, eq } from "drizzle-orm";
 import { z } from "zod";
 
 import { APP_ERROR_CODES, AppError } from "~/lib/errors";
-import { analyzePlaylistMetadata } from "~/lib/metadata-analysis";
+import {
+  analyzePlaylistMetadata,
+  buildStarterPackBrief,
+  isMetadataAnalysis,
+} from "~/lib/metadata-analysis";
+import { toFileNameBase } from "~/lib/utils";
 import {
   createTRPCRouter,
   protectedProcedure,
@@ -157,6 +162,48 @@ export const spotifyRouter = createTRPCRouter({
       analysis: entry.analysisJson,
     }));
   }),
+
+  exportAnalysis: protectedProcedure
+    .input(z.object({ playlistId: z.string().min(1) }))
+    .query(async ({ ctx, input }) => {
+      const entry = await ctx.db.query.cachedAnalyses.findFirst({
+        where: and(
+          eq(cachedAnalyses.playlistId, input.playlistId),
+          eq(cachedAnalyses.userId, ctx.session.user.id),
+        ),
+      });
+
+      if (!entry) {
+        throw new TRPCError({
+          code: "NOT_FOUND",
+          message: "No cached analysis was found for that playlist.",
+        });
+      }
+
+      if (!isMetadataAnalysis(entry.analysisJson)) {
+        throw new TRPCError({
+          code: "BAD_REQUEST",
+          message:
+            "This cached analysis uses the legacy audio-feature format. Re-run the playlist to export the metadata-first starter pack.",
+        });
+      }
+
+      const starterPack = buildStarterPackBrief({
+        analysis: entry.analysisJson,
+        playlistName: entry.playlistName,
+      });
+
+      return {
+        analysis: entry.analysisJson,
+        filenameBase: toFileNameBase(entry.playlistName, entry.playlistId),
+        manifest: entry.analysisJson.manifest,
+        pdfHtml: starterPack.html,
+        playlistId: entry.playlistId,
+        playlistName: entry.playlistName,
+        sections: starterPack.sections,
+        starterPackMarkdown: starterPack.markdown,
+      };
+    }),
 });
 
 function parseReleaseYear(releaseDate: string | null) {

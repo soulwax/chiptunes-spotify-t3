@@ -56,4 +56,4 @@ plus a retro soundtrack brief for NES, SNES, and Genesis-inspired composition.
 - Genre fingerprint from artist enrichment
 - Release timeline and runtime profile
 - Retro soundtrack lens, cue map, and grouped track roles for title screen, overworld, town, dungeon, boss, victory, and credits
-- Manifest and analysis JSON exports for later non-Spotify audio analysis
+- Manifest and analysis JSON exports, Markdown starter-pack briefs, and print-ready PDF-style briefs for later non-Spotify audio analysis
