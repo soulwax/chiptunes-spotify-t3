@@ -12,6 +12,7 @@ import { account } from "~/server/db/schema";
 export type ServerSession = NonNullable<
   Awaited<ReturnType<typeof auth.api.getSession>>
 > & {
+  spotifyAccountId: string | null;
   spotifyAccessToken: string | null;
 };
 
@@ -24,6 +25,7 @@ export async function getSessionFromRequestHeaders(requestHeaders: Headers) {
 
   const spotifyAccount = await db.query.account.findFirst({
     columns: {
+      accountId: true,
       accessToken: true,
     },
     where: and(
@@ -34,6 +36,7 @@ export async function getSessionFromRequestHeaders(requestHeaders: Headers) {
 
   return {
     ...session,
+    spotifyAccountId: spotifyAccount?.accountId ?? null,
     spotifyAccessToken: spotifyAccount?.accessToken ?? null,
   } satisfies ServerSession;
 }

@@ -7,7 +7,12 @@ const SPOTIFY_API_BASE = "https://api.spotify.com/v1";
 export interface SpotifyPlaylistSummary {
   id: string;
   name: string;
+  collaborative: boolean;
   images: Array<{ url: string; width: number | null; height: number | null }>;
+  owner: {
+    display_name: string | null;
+    id: string;
+  };
   tracks: { total: number };
 }
 
@@ -27,10 +32,23 @@ export interface SpotifyAudioFeatureResponse {
   mode: 0 | 1;
 }
 
+type SpotifyForbiddenErrorConfig = {
+  code: (typeof APP_ERROR_CODES)[keyof typeof APP_ERROR_CODES];
+  message: string;
+};
+
+type SpotifyFetchOptions = {
+  forbiddenError?: SpotifyForbiddenErrorConfig;
+};
+
 export async function spotifyFetch<T>(
   accessToken: string,
   path: string,
+  options?: SpotifyFetchOptions,
 ): Promise<T> {
+  const requestPath = path.startsWith("http")
+    ? `${new URL(path).pathname}${new URL(path).search}`
+    : path;
   const response = await fetch(
     path.startsWith("http") ? path : `${SPOTIFY_API_BASE}${path}`,
     {
@@ -49,10 +67,34 @@ export async function spotifyFetch<T>(
     });
   }
 
+  if (response.status === 403 && options?.forbiddenError) {
+    const errorBody = await response.text();
+
+    console.error("Spotify request was forbidden", {
+      body: errorBody,
+      path: requestPath,
+      status: response.status,
+    });
+
+    throw new TRPCError({
+      code: "FORBIDDEN",
+      message: options.forbiddenError.message,
+      cause: new AppError(options.forbiddenError.code),
+    });
+  }
+
   if (!response.ok) {
+    const errorBody = await response.text();
+
+    console.error("Spotify request failed", {
+      body: errorBody,
+      path: requestPath,
+      status: response.status,
+    });
+
     throw new TRPCError({
       code: "BAD_GATEWAY",
-      message: `Spotify request failed with status ${response.status}`,
+      message: `Spotify request failed with status ${response.status} for ${requestPath}`,
     });
   }
 
@@ -82,7 +124,7 @@ export async function getPlaylistTracks(
 ) {
   const tracks: SpotifyPlaylistTrack[] = [];
   let nextUrl: string | null =
-    `/playlists/${playlistId}/tracks?limit=100&fields=items(track(id,name,type,is_local)),next`;
+    `/playlists/${playlistId}/items?limit=100&fields=items(track(id,name,type,is_local)),next`;
 
   while (nextUrl) {
     const page: {
@@ -95,7 +137,13 @@ export async function getPlaylistTracks(
         } | null;
       }>;
       next: string | null;
-    } = await spotifyFetch(accessToken, nextUrl);
+    } = await spotifyFetch(accessToken, nextUrl, {
+      forbiddenError: {
+        code: APP_ERROR_CODES.SPOTIFY_PLAYLIST_NOT_ANALYZABLE,
+        message:
+          "Spotify currently only lets this app analyze playlists you own or collaborate on.",
+      },
+    });
 
     for (const item of page.items) {
       const track = item.track;
@@ -126,7 +174,7 @@ export async function getPlaylistMetadata(
 ) {
   return spotifyFetch<SpotifyPlaylistSummary>(
     accessToken,
-    `/playlists/${playlistId}?fields=id,name,images,tracks(total)`,
+    `/playlists/${playlistId}?fields=id,name,images,tracks(total),owner(id,display_name),collaborative`,
   );
 }
 
@@ -141,7 +189,13 @@ export async function getAudioFeatures(
     const batch = uniqueIds.slice(index, index + 100);
     const response = await spotifyFetch<{
       audio_features: Array<SpotifyAudioFeatureResponse | null>;
-    }>(accessToken, `/audio-features?ids=${batch.join(",")}`);
+    }>(accessToken, `/audio-features?ids=${batch.join(",")}`, {
+      forbiddenError: {
+        code: APP_ERROR_CODES.SPOTIFY_AUDIO_FEATURES_UNAVAILABLE,
+        message:
+          "Spotify blocked audio-feature access for this app, so Chipmap cannot analyze this playlist right now.",
+      },
+    });
 
     for (const feature of response.audio_features) {
       if (!feature?.id) {

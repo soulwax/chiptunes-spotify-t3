@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.2.2 - 2026-03-19
+
+### Fixed
+
+- Switched playlist analysis to Spotify's current `/playlists/{id}/items` endpoint instead of the deprecated tracks path.
+- Added explicit Spotify limitation handling so playlists the user cannot analyze now surface clear app errors instead of opaque upstream failures.
+- Updated the dashboard to mark followed playlists from other owners as view-only when Spotify will not allow analysis for this app.
+
 ## 0.2.1 - 2026-03-19
 
 ### Fixed

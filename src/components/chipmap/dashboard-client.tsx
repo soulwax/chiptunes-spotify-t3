@@ -38,9 +38,12 @@ type CachedAnalysis = {
 };
 
 type Playlist = {
+  accessLabel: string;
+  canAnalyze: boolean;
   id: string;
   name: string;
   imageUrl: string | null;
+  ownerName: string | null;
   trackCount: number;
 };
 
@@ -230,6 +233,15 @@ export function DashboardClient({ user }: DashboardClientProps) {
           </div>
 
           <section id="playlist-grid" data-testid="playlist-grid">
+            <div
+              className="border-border/70 bg-card/70 mb-4 rounded-2xl border p-4 text-sm text-muted-foreground"
+              data-testid="playlist-access-note"
+            >
+              Spotify currently lets this app analyze playlists you own or
+              collaborate on. Followed playlists from other owners may appear as
+              view-only here.
+            </div>
+
             {playlistsQuery.isLoading ? (
               <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
                 {Array.from({ length: 6 }).map((_, index) => (
@@ -254,8 +266,9 @@ export function DashboardClient({ user }: DashboardClientProps) {
                     onClick={(): void =>
                       router.push(`/analysis/${playlist.id}?run=1`)
                     }
-                    className="group border-border bg-card hover:border-accent/60 overflow-hidden rounded-3xl border text-left transition hover:-translate-y-0.5 hover:shadow-[0_24px_60px_rgba(0,0,0,0.3)]"
+                    className="group border-border bg-card overflow-hidden rounded-3xl border text-left transition hover:border-accent/60 hover:-translate-y-0.5 hover:shadow-[0_24px_60px_rgba(0,0,0,0.3)] disabled:cursor-not-allowed disabled:hover:border-border disabled:hover:translate-y-0 disabled:hover:shadow-none disabled:opacity-70"
                     data-testid={`playlist-card-${playlist.id}`}
+                    disabled={!playlist.canAnalyze}
                   >
                     <div className="bg-secondary relative aspect-square overflow-hidden">
                       {playlist.imageUrl ? (
@@ -277,7 +290,12 @@ export function DashboardClient({ user }: DashboardClientProps) {
                         <h2 className="line-clamp-2 text-lg font-semibold">
                           {playlist.name}
                         </h2>
-                        <Badge variant="teal">Analyze</Badge>
+                        <Badge
+                          variant={playlist.canAnalyze ? "teal" : "default"}
+                          data-testid={`playlist-access-label-${playlist.id}`}
+                        >
+                          {playlist.accessLabel}
+                        </Badge>
                       </div>
                       <p
                         className="text-muted-foreground text-sm"
@@ -286,6 +304,23 @@ export function DashboardClient({ user }: DashboardClientProps) {
                         {playlist.trackCount} track
                         {playlist.trackCount === 1 ? "" : "s"}
                       </p>
+                      <p
+                        className="text-muted-foreground mt-2 text-sm"
+                        data-testid={`playlist-owner-${playlist.id}`}
+                      >
+                        {playlist.ownerName
+                          ? `Owner: ${playlist.ownerName}`
+                          : "Owner unavailable"}
+                      </p>
+                      {!playlist.canAnalyze ? (
+                        <p
+                          className="mt-3 text-sm text-amber-400"
+                          data-testid={`playlist-analysis-disabled-${playlist.id}`}
+                        >
+                          Pick an owned or collaborative playlist to analyze
+                          this in Chipmap.
+                        </p>
+                      ) : null}
                     </div>
                   </button>
                 ))}

@@ -47,13 +47,18 @@ export function AnalysisRunner({
     });
   }, [mutation.error?.data?.appErrorCode, router]);
 
+  const errorCopy = getAnalysisErrorCopy(
+    mutation.error?.data?.appErrorCode,
+    mutation.error?.message,
+  );
+
   if (mutation.isError) {
     return (
       <div className="chipmap-grid flex min-h-screen items-center justify-center bg-background px-4 py-8">
         <Card className="w-full max-w-xl" data-testid="analysis-error-state">
           <CardHeader>
-            <CardTitle>We couldn&apos;t analyze that playlist.</CardTitle>
-            <CardDescription>{mutation.error.message}</CardDescription>
+            <CardTitle>{errorCopy.title}</CardTitle>
+            <CardDescription>{errorCopy.description}</CardDescription>
           </CardHeader>
           <CardContent className="flex gap-3">
             <Button
@@ -121,4 +126,31 @@ export function AnalysisRunner({
       </Card>
     </div>
   );
+}
+
+function getAnalysisErrorCopy(
+  errorCode: string | null | undefined,
+  fallbackMessage: string | undefined,
+) {
+  if (errorCode === APP_ERROR_CODES.SPOTIFY_PLAYLIST_NOT_ANALYZABLE) {
+    return {
+      title: "That playlist is view-only in Spotify.",
+      description:
+        "Spotify currently lets this app analyze playlists you own or collaborate on. Pick one of those from the dashboard and try again.",
+    };
+  }
+
+  if (errorCode === APP_ERROR_CODES.SPOTIFY_AUDIO_FEATURES_UNAVAILABLE) {
+    return {
+      title: "Spotify blocked audio-feature access for this app.",
+      description:
+        "Chipmap can load your playlists, but Spotify refused the audio-features request needed to build an analysis. This is usually a Spotify app access limitation rather than a playlist bug.",
+    };
+  }
+
+  return {
+    title: "We couldn't analyze that playlist.",
+    description:
+      fallbackMessage ?? "Something went wrong while talking to Spotify.",
+  };
 }

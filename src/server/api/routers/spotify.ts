@@ -29,6 +29,7 @@ const spotifyProcedure = protectedProcedure.use(async ({ ctx, next }) => {
     ctx: {
       session: {
         ...ctx.session,
+        spotifyAccountId: ctx.session.spotifyAccountId,
         spotifyAccessToken: ctx.session.spotifyAccessToken,
       },
     },
@@ -40,9 +41,19 @@ export const spotifyRouter = createTRPCRouter({
     const playlists = await getAllPlaylists(ctx.session.spotifyAccessToken);
 
     return playlists.map((playlist) => ({
+      accessLabel:
+        playlist.owner.id === ctx.session.spotifyAccountId
+          ? "Owned"
+          : playlist.collaborative
+            ? "Collaborative"
+            : "View only",
+      canAnalyze:
+        playlist.owner.id === ctx.session.spotifyAccountId ||
+        playlist.collaborative,
       id: playlist.id,
       name: playlist.name,
       imageUrl: playlist.images[0]?.url ?? null,
+      ownerName: playlist.owner.display_name,
       trackCount: playlist.tracks.total,
     }));
   }),

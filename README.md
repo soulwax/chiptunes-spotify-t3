@@ -42,3 +42,9 @@ game-music starter pack for NES, SNES, and Genesis-inspired composition.
 - If you open the app at `http://localhost:3000`, register `http://localhost:3000/api/auth/callback/spotify`.
 - If you open the app at `http://10.2.0.2:3000`, register `http://10.2.0.2:3000/api/auth/callback/spotify`.
 - `http://.../api/auth/spotify/callback` is not a valid BetterAuth callback path.
+
+## Spotify Playlist Limits
+
+- Chipmap uses Spotify's current playlist items endpoint: `GET /playlists/{id}/items`.
+- In Spotify development-mode constraints, analysis may only work for playlists you own or collaborate on.
+- Followed playlists from other owners can still appear in the dashboard, but Chipmap marks them as view-only and does not send them into analysis.
