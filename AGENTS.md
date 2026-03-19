@@ -36,4 +36,4 @@
 
 ## Spotify Callback URL
 
-- <https://chiptunes.darkfloor.org/api/auth/callback/spotify>
+- <https://chipmap.darkfloor.org/api/auth/callback/spotify>

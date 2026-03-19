@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.2.1 - 2026-03-19
+
+### Fixed
+
+- Switched Spotify sign-in initiation to BetterAuth's client-side OAuth flow so the provider state cookie is set correctly before redirecting to Spotify.
+- Clarified Spotify callback URL requirements for Vercel production and local development origins.
+
 ## 0.2.0 - 2026-03-19
 
 ### Added

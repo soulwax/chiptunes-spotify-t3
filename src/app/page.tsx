@@ -1,9 +1,8 @@
 import { redirect } from "next/navigation";
 
 import { ChipmapLogo } from "~/components/chipmap/logo";
-import { Button } from "~/components/ui/button";
+import { SpotifySignInButton } from "~/components/chipmap/spotify-sign-in-button";
 import { Card, CardContent } from "~/components/ui/card";
-import { auth } from "~/server/better-auth";
 import { getSession } from "~/server/better-auth/server";
 
 export default async function HomePage() {
@@ -51,29 +50,7 @@ export default async function HomePage() {
             </ul>
           </div>
 
-          <form>
-            <Button
-              className="h-12 w-full bg-[hsl(var(--green))] text-background hover:opacity-90"
-              formAction={async () => {
-                "use server";
-                const response = await auth.api.signInSocial({
-                  body: {
-                    provider: "spotify",
-                    callbackURL: "/dashboard",
-                  },
-                });
-
-                if (!response.url) {
-                  throw new Error("Spotify sign-in did not return a redirect URL.");
-                }
-
-                redirect(response.url);
-              }}
-              data-testid="spotify-sign-in-button"
-            >
-              Sign in with Spotify
-            </Button>
-          </form>
+          <SpotifySignInButton />
         </CardContent>
       </Card>
     </main>

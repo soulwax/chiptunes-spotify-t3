@@ -35,3 +35,10 @@ game-music starter pack for NES, SNES, and Genesis-inspired composition.
 - Production base URL: `https://chiptunes.darkfloor.org`
 - Spotify redirect URI: `https://chiptunes.darkfloor.org/api/auth/callback/spotify`
 - Set `BETTER_AUTH_URL=https://chiptunes.darkfloor.org` in Vercel production envs
+
+## Local Spotify Auth
+
+- Spotify callback URLs must match BetterAuth exactly, including path order.
+- If you open the app at `http://localhost:3000`, register `http://localhost:3000/api/auth/callback/spotify`.
+- If you open the app at `http://10.2.0.2:3000`, register `http://10.2.0.2:3000/api/auth/callback/spotify`.
+- `http://.../api/auth/spotify/callback` is not a valid BetterAuth callback path.
