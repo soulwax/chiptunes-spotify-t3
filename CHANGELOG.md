@@ -1,5 +1,18 @@
 # Changelog
 
+## 0.4.0 - 2026-03-19
+
+### Added
+
+- Added deterministic track-role assignment so every imported track is grouped into soundtrack scenes like Title Screen, Overworld, Town, Dungeon, Boss, Victory, or Credits.
+- Added explanation strings, per-track metadata badges, and direct Spotify links in the new Track Roles section.
+- Extended the metadata-first soundtrack map with a dedicated Victory cue.
+
+### Changed
+
+- Reworked the analysis view from cue examples only into a full grouped scene map for the whole playlist.
+- Updated the roadmap status to reflect that Track-to-Cue Assignment is now shipped in metadata-first mode.
+
 ## 0.3.0 - 2026-03-19
 
 ### Changed

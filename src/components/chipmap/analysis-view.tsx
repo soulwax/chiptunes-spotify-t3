@@ -368,6 +368,105 @@ function MetadataAnalysisView({
             </div>
           </section>
 
+          <section data-testid="track-roles-section">
+            <StickyHeading title="Track Roles" />
+            <div className="grid gap-4">
+              {analysis.trackRoles.map((role) => (
+                <Card
+                  key={role.id}
+                  data-testid={`track-role-group-${role.id}`}
+                >
+                  <CardHeader>
+                    <div className="flex flex-wrap items-center gap-3">
+                      <CardTitle>{role.title}</CardTitle>
+                      <Badge variant="teal">{role.trackCount} tracks</Badge>
+                    </div>
+                    <CardDescription>{role.description}</CardDescription>
+                  </CardHeader>
+                  <CardContent className="space-y-3">
+                    {role.tracks.length > 0 ? (
+                      role.tracks.map((track) => (
+                        <div
+                          key={track.spotifyId}
+                          className="border-border bg-secondary/35 rounded-2xl border p-4"
+                          data-testid={`track-role-assignment-${role.id}-${track.spotifyId}`}
+                        >
+                          <div className="flex flex-wrap items-start justify-between gap-3">
+                            <div className="min-w-0">
+                              <p className="truncate font-semibold text-foreground">
+                                {track.title}
+                              </p>
+                              <p className="mt-1 text-sm text-muted-foreground">
+                                {track.artists.join(", ")}
+                              </p>
+                            </div>
+                            <div className="flex flex-wrap gap-2 text-xs">
+                              <Badge variant="default">
+                                {formatDuration(track.durationMs)}
+                              </Badge>
+                              <Badge variant="default">
+                                {track.releaseYear ?? "Unknown Year"}
+                              </Badge>
+                              <Badge variant="default">
+                                Pop {track.popularity ?? "?"}
+                              </Badge>
+                            </div>
+                          </div>
+
+                          <p
+                            className="mt-3 text-sm text-muted-foreground"
+                            data-testid={`track-role-reason-${role.id}-${track.spotifyId}`}
+                          >
+                            {track.explanation}
+                          </p>
+
+                          <div className="mt-3 flex flex-wrap items-center gap-2">
+                            {track.genres.length > 0 ? (
+                              track.genres.map((genre) => (
+                                <Badge
+                                  key={`${track.spotifyId}-${genre}`}
+                                  variant="amber"
+                                >
+                                  {genre}
+                                </Badge>
+                              ))
+                            ) : (
+                              <Badge variant="default">No genre tags</Badge>
+                            )}
+
+                            <Badge variant="purple">
+                              ISRC {track.isrc ?? "Missing"}
+                            </Badge>
+
+                            {track.spotifyUrl ? (
+                              <a
+                                href={track.spotifyUrl}
+                                target="_blank"
+                                rel="noreferrer"
+                                className="text-accent text-sm font-medium"
+                                data-testid={`track-role-open-spotify-${role.id}-${track.spotifyId}`}
+                              >
+                                Open in Spotify
+                              </a>
+                            ) : null}
+                          </div>
+                        </div>
+                      ))
+                    ) : (
+                      <div
+                        className="border-border text-muted-foreground rounded-2xl border border-dashed p-4 text-sm"
+                        data-testid={`track-role-empty-${role.id}`}
+                      >
+                        No tracks in this playlist leaned most strongly toward
+                        the {role.title.toLowerCase()} slot.
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          </section>
+
           <section data-testid="manifest-preview-section">
             <StickyHeading title="Canonical Manifest Preview" />
             <Card>

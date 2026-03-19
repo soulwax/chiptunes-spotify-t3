@@ -5,7 +5,7 @@
 ### 2-week MVP
 
 1. Export Starter Pack v1
-2. Track-to-Cue Assignment
+2. Track-to-Cue Assignment [done in metadata-first mode]
 3. Analysis polish
 
 Success signal:
@@ -33,8 +33,8 @@ People analyze multiple playlists, revisit old analyses, and share links.
 ### Frontend
 
 - `FE-01 [P0]` Add an Export menu on `/analysis/[playlistId]` with actions for `JSON`, `Markdown Brief`, `PDF Brief`, and `MIDI Chords`.
-- `FE-02 [P0]` Add a `Track Roles` section on the analysis page showing every track grouped by scene: `Title`, `Overworld`, `Town`, `Dungeon`, `Boss`, `Victory`, `Credits`.
-- `FE-03 [P0]` Show a one-line reason per track assignment, for example `148 BPM, low valence, high energy -> Boss`.
+- `FE-02 [P0] [done]` Add a `Track Roles` section on the analysis page showing every track grouped by scene: `Title`, `Overworld`, `Town`, `Dungeon`, `Boss`, `Victory`, `Credits`.
+- `FE-03 [P0] [done]` Show a one-line reason per track assignment, for example `148 BPM, low valence, high energy -> Boss`.
 - `FE-04 [P0]` Improve error states so Spotify limitations read clearly: `View-only playlist`, `Audio features unavailable`, `Token expired`.
 - `FE-05 [P1]` Add a `Soundtrack Blueprint` section that summarizes the playlist as a full game soundtrack plan.
 - `FE-06 [P1]` Add `Remix Mode` controls with presets like `More SNES`, `More Boss`, `More Exploration`, `Darker`.
@@ -54,15 +54,15 @@ People analyze multiple playlists, revisit old analyses, and share links.
 
 ### Analysis engine
 
-- `AN-01 [P0]` Implement `assignTrackRoles(tracks, features)` in `~/lib/analysis.ts`.
-- `AN-02 [P0]` Define deterministic heuristics for scene mapping:
+- `AN-01 [P0] [done in metadata-first mode]` Implement `assignTrackRoles(tracks, features)` in `~/lib/analysis.ts`.
+- `AN-02 [P0] [done in metadata-first mode]` Define deterministic heuristics for scene mapping:
   - `Boss`: high energy, low valence, high BPM
   - `Dungeon`: low valence, lower energy, darker key bias
   - `Town`: low energy, high valence
   - `Overworld`: mid/high energy, bright valence
   - `Victory`: high valence, major bias
   - `Credits`: balanced mood, moderate tempo
-- `AN-03 [P0]` Return explanation metadata per role assignment: matched rules, percentile placement, BPM bucket, key/mode.
+- `AN-03 [P0] [done in metadata-first mode]` Return explanation metadata per role assignment: matched rules, percentile placement, BPM bucket, key/mode.
 - `AN-04 [P0]` Add `buildStarterPackBrief(analysis)` to create export-ready Markdown/PDF sections.
 - `AN-05 [P1]` Implement `generateSoundtrackBlueprint(analysis, assignments)` to turn one playlist into a full cue list.
 - `AN-06 [P1]` Implement `applyRemixConstraint(analysis, constraint)` so outputs can shift toward `SNES`, `Boss`, `Dark`, `Exploration`, and similar modes.
@@ -80,7 +80,7 @@ People analyze multiple playlists, revisit old analyses, and share links.
 
 ## Best first sprint
 
-1. Ship `Track Roles`
+1. Ship `Track Roles` [done in metadata-first mode]
 2. Ship `Export Starter Pack v1`
 3. Ship clearer Spotify limitation states
 

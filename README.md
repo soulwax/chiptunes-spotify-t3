@@ -19,8 +19,8 @@ plus a retro soundtrack brief for NES, SNES, and Genesis-inspired composition.
 2. Pick a playlist from your library.
 3. Import track, artist, album, release-year, popularity, duration, and ISRC metadata.
 4. Generate Chipmap analysis output:
-   canonical manifests, release timelines, genre fingerprints, cue maps, and
-   era-matched soundtrack recommendations.
+   canonical manifests, release timelines, genre fingerprints, cue maps,
+   per-track scene assignments, and era-matched soundtrack recommendations.
 
 ## Development
 
@@ -55,5 +55,5 @@ plus a retro soundtrack brief for NES, SNES, and Genesis-inspired composition.
 - Canonical playlist manifest with track title, artists, album, release year, duration, popularity, Spotify URL, and ISRC where available
 - Genre fingerprint from artist enrichment
 - Release timeline and runtime profile
-- Retro soundtrack lens and cue map for title screen, overworld, town, dungeon, boss, and credits
+- Retro soundtrack lens, cue map, and grouped track roles for title screen, overworld, town, dungeon, boss, victory, and credits
 - Manifest and analysis JSON exports for later non-Spotify audio analysis

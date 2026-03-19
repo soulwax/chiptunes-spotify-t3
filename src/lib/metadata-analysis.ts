@@ -1,6 +1,14 @@
 import { type ChipmapAnalysis as LegacyChipmapAnalysis } from "~/lib/analysis";
 
 export type ChipmapEra = "NES" | "SNES" | "Genesis";
+export type ChipmapTrackRoleId =
+  | "title-screen"
+  | "overworld"
+  | "town"
+  | "dungeon"
+  | "boss"
+  | "victory"
+  | "credits";
 
 export interface ChipmapArtistInput {
   spotifyId: string | null;
@@ -102,11 +110,32 @@ export interface ChipmapSoundtrackProfile {
 
 export interface ChipmapCueCard {
   description: string;
-  id: string;
+  id: ChipmapTrackRoleId;
   instrumentation: string;
   rationale: string;
   sourceTracks: string[];
   title: string;
+}
+
+export interface ChipmapTrackRoleAssignment {
+  artists: string[];
+  durationMs: number;
+  explanation: string;
+  genres: string[];
+  isrc: string | null;
+  popularity: number | null;
+  releaseYear: number | null;
+  spotifyId: string;
+  spotifyUrl: string | null;
+  title: string;
+}
+
+export interface ChipmapTrackRoleGroup {
+  description: string;
+  id: ChipmapTrackRoleId;
+  title: string;
+  trackCount: number;
+  tracks: ChipmapTrackRoleAssignment[];
 }
 
 export interface ChipmapMetadataAnalysis {
@@ -122,6 +151,7 @@ export interface ChipmapMetadataAnalysis {
   soundtrackProfile: ChipmapSoundtrackProfile;
   trackCount: number;
   trackLength: ChipmapSummaryMetric;
+  trackRoles: ChipmapTrackRoleGroup[];
 }
 
 export type ChipmapAnalysis = LegacyChipmapAnalysis | ChipmapMetadataAnalysis;
@@ -136,7 +166,7 @@ type CueDefinition = {
   boostExplicit?: boolean;
   description: string;
   durationTargetMs: number;
-  id: string;
+  id: ChipmapTrackRoleId;
   keywords: string[];
   popularityBias: "high" | "low" | "mid";
   title: string;
@@ -245,6 +275,14 @@ const CUE_DEFINITIONS: CueDefinition[] = [
     boostExplicit: true,
   },
   {
+    id: "victory",
+    title: "Victory",
+    description: "Find the playlist's most triumphant, high-clarity metadata signals for the win fanfare.",
+    durationTargetMs: 190_000,
+    keywords: ["dance", "indie pop", "new wave", "power pop", "synthpop"],
+    popularityBias: "high",
+  },
+  {
     id: "credits",
     title: "Credits",
     description: "Close on the broadest, most reflective slice of the playlist.",
@@ -264,6 +302,7 @@ const CUE_INSTRUMENTATION: Record<
     town: "50% pulse pad, triangle bass, sparse pulse countermelody",
     dungeon: "triangle drone, 12.5% pulse stabs, low-register ostinato",
     boss: "12.5% pulse bite, triangle bass drive, urgent noise bursts",
+    victory: "Bright pulse fanfare, triangle bass lift, fast arpeggio flourish",
     credits: "25% pulse melody, soft triangle floor, wider arpeggio spacing",
   },
   SNES: {
@@ -272,6 +311,7 @@ const CUE_INSTRUMENTATION: Record<
     town: "BRR flute, soft keys, gentle brushed percussion",
     dungeon: "Warm pad, low strings, distant metallic hits",
     boss: "Layered strings, punchy toms, sharper sampled brass stabs",
+    victory: "Bright brass hit, strings swell, bell-like sampled accent",
     credits: "Wide strings, bell-like plucks, slow moving sampled choir",
   },
   Genesis: {
@@ -280,6 +320,7 @@ const CUE_INSTRUMENTATION: Record<
     town: "FM electric piano, glass pad, soft FM bass pulses",
     dungeon: "FM growl bass, glass pad haze, metallic bell accents",
     boss: "FM brass stabs, growl bass, aggressive gated percussion",
+    victory: "FM brass fanfare, electric piano lift, bright octave bass",
     credits: "Glass pad, electric piano, sustained FM lead resolution",
   },
 };
@@ -364,6 +405,7 @@ export function analyzePlaylistMetadata(args: {
     },
     trackCount,
     trackLength: summarizeMetric(trackLengths, 0),
+    trackRoles: buildTrackRoles(manifestTracks),
   };
 }
 
@@ -575,6 +617,115 @@ function buildCueMap(tracks: ChipmapManifestTrack[], era: ChipmapEra) {
   });
 }
 
+function buildTrackRoles(tracks: ChipmapManifestTrack[]): ChipmapTrackRoleGroup[] {
+  const groupedTracks = new Map<
+    ChipmapTrackRoleId,
+    Array<ChipmapTrackRoleAssignment & { score: number }>
+  >();
+
+  for (const cue of CUE_DEFINITIONS) {
+    groupedTracks.set(cue.id, []);
+  }
+
+  for (const track of tracks) {
+    const rankedCues = CUE_DEFINITIONS.map((cue) => ({
+      cue,
+      score: scoreTrackForCue(track, cue),
+    })).sort((left, right) => {
+      if (right.score !== left.score) {
+        return right.score - left.score;
+      }
+      return cueRank(left.cue.id) - cueRank(right.cue.id);
+    });
+
+    const bestMatch = rankedCues[0];
+    if (!bestMatch) {
+      continue;
+    }
+
+    groupedTracks.get(bestMatch.cue.id)?.push({
+      artists: track.artists.map((artist) => artist.name),
+      durationMs: track.durationMs,
+      explanation: buildTrackRoleExplanation(track, bestMatch.cue),
+      genres: track.genres.slice(0, 3),
+      isrc: track.isrc,
+      popularity: track.popularity,
+      releaseYear: track.releaseYear,
+      score: bestMatch.score,
+      spotifyId: track.spotifyId,
+      spotifyUrl: track.spotifyUrl,
+      title: track.title,
+    });
+  }
+
+  return CUE_DEFINITIONS.map((cue) => {
+    const roleTracks = [...(groupedTracks.get(cue.id) ?? [])]
+      .sort((left, right) => {
+        if (right.score !== left.score) {
+          return right.score - left.score;
+        }
+        return left.title.localeCompare(right.title);
+      })
+      .map(({ score: _score, ...track }) => track);
+
+    return {
+      description: cue.description,
+      id: cue.id,
+      title: cue.title,
+      trackCount: roleTracks.length,
+      tracks: roleTracks,
+    };
+  });
+}
+
+function buildTrackRoleExplanation(
+  track: ChipmapManifestTrack,
+  cue: CueDefinition,
+) {
+  const matchedGenres = track.genres
+    .map(normalizeGenre)
+    .filter((genre) =>
+      cue.keywords.some((keyword) => genre.includes(keyword)),
+    )
+    .slice(0, 2);
+  const genreSummary =
+    matchedGenres.length > 0
+      ? `Genres like ${matchedGenres.join(", ")} fit ${cue.title.toLowerCase()}.`
+      : `Genre labels are sparse, so ${cue.title.toLowerCase()} is driven by the rest of the metadata mix.`;
+
+  const popularity = track.popularity ?? 50;
+  const popularitySummary =
+    cue.popularityBias === "high"
+      ? popularity >= 65
+        ? "Higher popularity helps it read like a front-facing cue."
+        : "Its lower popularity gives the cue a less obvious, more niche edge."
+      : cue.popularityBias === "low"
+        ? popularity <= 45
+          ? "Lower popularity makes it feel like side-path or deep-world material."
+          : "The popularity level still fits a supporting scene rather than a headline moment."
+        : "The popularity range stays balanced enough for connective scenes.";
+
+  const durationDelta = track.durationMs - cue.durationTargetMs;
+  const durationSummary =
+    Math.abs(durationDelta) <= 30_000
+      ? "Runtime lands close to the target loop length."
+      : durationDelta < 0
+        ? "Shorter runtime keeps the cue compact and immediate."
+        : "Longer runtime gives the cue more room to breathe.";
+  const explicitSummary =
+    cue.boostExplicit && track.explicit
+      ? "Explicit language adds a sharper edge."
+      : cue.boostExplicit
+        ? "Even without explicit lyrics, the rest of the metadata still pushes it toward conflict."
+        : track.explicit
+          ? "Explicit language adds a little extra attitude."
+          : "";
+
+  return [genreSummary, popularitySummary, durationSummary, explicitSummary]
+    .filter(Boolean)
+    .join(" ");
+}
+
 function scoreTrackForCue(track: ChipmapManifestTrack, cue: CueDefinition) {
   const normalizedGenres = track.genres.map(normalizeGenre);
   const genreHits = cue.keywords.reduce(
@@ -683,6 +834,20 @@ function eraRank(era: ChipmapEra) {
     return 1;
   }
   return 2;
+}
+
+function cueRank(id: ChipmapTrackRoleId) {
+  const order: ChipmapTrackRoleId[] = [
+    "title-screen",
+    "overworld",
+    "town",
+    "dungeon",
+    "boss",
+    "victory",
+    "credits",
+  ];
+
+  return order.indexOf(id);
 }
 
 export function formatDuration(durationMs: number) {
