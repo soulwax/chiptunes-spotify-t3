@@ -34,6 +34,13 @@ type AnalysisViewProps = {
   analysis: ChipmapAnalysis;
 };
 
+const MIN_GENRE_BAR_WIDTH_PERCENT = 8;
+const MIN_METER_BAR_WIDTH_PERCENT = 6;
+
+function formatPercent(value: number) {
+  return `${Math.round(value * 100)}%`;
+}
+
 export function AnalysisView({
   playlistId,
   playlistName,
@@ -152,13 +159,13 @@ function MetadataAnalysisView({
               <MeterCard
                 label="Explicit Ratio"
                 value={analysis.overview.explicitRatio}
-                formatter={(value) => `${Math.round(value * 100)}%`}
+                formatter={formatPercent}
                 testId="stat-explicit-ratio"
               />
               <MeterCard
                 label="ISRC Coverage"
                 value={analysis.overview.isrcCoverageRatio}
-                formatter={(value) => `${Math.round(value * 100)}%`}
+                formatter={formatPercent}
                 testId="stat-isrc-coverage"
               />
             </div>
@@ -212,23 +219,25 @@ function MetadataAnalysisView({
                           }}
                         />
                         <Bar dataKey="count" radius={[10, 10, 0, 0]}>
-                          {analysis.releaseProfile.distribution.map((bucket) => (
-                            <Cell
-                              key={bucket.label}
-                              fill={
-                                bucket.isMedianBucket
-                                  ? "hsl(var(--accent))"
-                                  : "hsl(var(--secondary-foreground) / 0.32)"
-                              }
-                            />
-                          ))}
+                          {analysis.releaseProfile.distribution.map(
+                            (bucket) => (
+                              <Cell
+                                key={bucket.label}
+                                fill={
+                                  bucket.isMedianBucket
+                                    ? "hsl(var(--accent))"
+                                    : "hsl(var(--secondary-foreground) / 0.32)"
+                                }
+                              />
+                            ),
+                          )}
                         </Bar>
                       </BarChart>
                     </ResponsiveContainer>
                   </div>
                 ) : (
                   <div
-                    className="text-muted-foreground rounded-2xl border border-dashed border-border p-8 text-sm"
+                    className="text-muted-foreground border-border rounded-2xl border border-dashed p-8 text-sm"
                     data-testid="release-timeline-empty"
                   >
                     Release years were missing from the imported track metadata.
@@ -264,13 +273,17 @@ function MetadataAnalysisView({
                 >
                   <CardHeader className="pb-3">
                     <CardTitle className="text-base">{genre.genre}</CardTitle>
-                    <CardDescription>{genre.count} tracks tagged</CardDescription>
+                    <CardDescription>
+                      {genre.count} tracks tagged
+                    </CardDescription>
                   </CardHeader>
                   <CardContent>
                     <div className="bg-secondary h-2 rounded-full">
                       <div
                         className="bg-accent h-2 rounded-full"
-                        style={{ width: `${Math.max(8, genre.share * 100)}%` }}
+                        style={{
+                          width: `${Math.max(MIN_GENRE_BAR_WIDTH_PERCENT, genre.share * 100)}%`,
+                        }}
                       />
                     </div>
                     <p className="text-muted-foreground mt-3 text-sm">
@@ -299,7 +312,7 @@ function MetadataAnalysisView({
                 {analysis.soundtrackProfile.reasons.map((reason) => (
                   <div
                     key={reason}
-                    className="border-border bg-secondary/40 rounded-2xl border p-4 text-sm text-muted-foreground"
+                    className="border-border bg-secondary/40 text-muted-foreground rounded-2xl border p-4 text-sm"
                     data-testid="soundtrack-profile-reason"
                   >
                     {reason}
@@ -320,19 +333,21 @@ function MetadataAnalysisView({
                   </CardHeader>
                   <CardContent className="grid gap-4 text-sm">
                     <div>
-                      <p className="mb-1 font-medium text-foreground">
+                      <p className="text-foreground mb-1 font-medium">
                         Instrumentation
                       </p>
-                      <p className="text-muted-foreground">{cue.instrumentation}</p>
+                      <p className="text-muted-foreground">
+                        {cue.instrumentation}
+                      </p>
                     </div>
                     <div>
-                      <p className="mb-1 font-medium text-foreground">
+                      <p className="text-foreground mb-1 font-medium">
                         Why this cue fits
                       </p>
                       <p className="text-muted-foreground">{cue.rationale}</p>
                     </div>
                     <div>
-                      <p className="mb-2 font-medium text-foreground">
+                      <p className="text-foreground mb-2 font-medium">
                         Source tracks
                       </p>
                       <div className="flex flex-wrap gap-2">
@@ -358,7 +373,7 @@ function MetadataAnalysisView({
             <Card>
               <CardContent className="overflow-x-auto p-0">
                 <table className="min-w-full text-left text-sm">
-                  <thead className="bg-secondary/50 text-muted-foreground text-xs uppercase tracking-[0.18em]">
+                  <thead className="bg-secondary/50 text-muted-foreground text-xs tracking-[0.18em] uppercase">
                     <tr>
                       <th className="px-5 py-4">Track</th>
                       <th className="px-5 py-4">Artists</th>
@@ -374,7 +389,7 @@ function MetadataAnalysisView({
                         className="border-border border-t"
                       >
                         <td className="px-5 py-4">
-                          <div className="font-medium text-foreground">
+                          <div className="text-foreground font-medium">
                             {track.title}
                           </div>
                           <div className="text-muted-foreground mt-1">
@@ -382,7 +397,9 @@ function MetadataAnalysisView({
                           </div>
                         </td>
                         <td className="text-muted-foreground px-5 py-4">
-                          {track.artists.map((artist) => artist.name).join(", ")}
+                          {track.artists
+                            .map((artist) => artist.name)
+                            .join(", ")}
                         </td>
                         <td className="text-muted-foreground px-5 py-4">
                           {track.albumName}
@@ -406,7 +423,7 @@ function MetadataAnalysisView({
             <div className="grid gap-3">
               {analysis.nextSteps.map((step) => (
                 <Card key={step} data-testid="next-step-card">
-                  <CardContent className="p-5 text-sm text-muted-foreground">
+                  <CardContent className="text-muted-foreground p-5 text-sm">
                     {step}
                   </CardContent>
                 </Card>
@@ -428,7 +445,9 @@ function LegacyAnalysisNotice({
     <div className="chipmap-grid bg-background flex min-h-screen items-center justify-center px-4 py-8">
       <Card className="w-full max-w-xl" data-testid="legacy-analysis-notice">
         <CardHeader>
-          <CardTitle>That cached analysis uses the old audio-feature mode.</CardTitle>
+          <CardTitle>
+            That cached analysis uses the old audio-feature mode.
+          </CardTitle>
           <CardDescription>
             Chipmap now runs in metadata-first mode because Spotify blocks audio
             features for this app. Re-run the playlist to import a canonical
@@ -483,7 +502,7 @@ function StatCard({
         <CardDescription>{label}</CardDescription>
         <CardTitle className="text-2xl">{value}</CardTitle>
       </CardHeader>
-      <CardContent className="text-sm text-muted-foreground">
+      <CardContent className="text-muted-foreground text-sm">
         {helper}
       </CardContent>
     </Card>
@@ -493,12 +512,12 @@ function StatCard({
 function MeterCard({
   label,
   value,
-  formatter,
+  formatter = formatPercent,
   testId,
 }: Readonly<{
   label: string;
   value: number;
-  formatter: (value: number) => string;
+  formatter?: (value: number) => string;
   testId: string;
 }>) {
   return (
@@ -511,7 +530,9 @@ function MeterCard({
         <div className="bg-secondary h-2 rounded-full">
           <div
             className="bg-accent h-2 rounded-full"
-            style={{ width: `${Math.max(6, value * 100)}%` }}
+            style={{
+              width: `${Math.max(MIN_METER_BAR_WIDTH_PERCENT, value * 100)}%`,
+            }}
           />
         </div>
       </CardContent>
@@ -533,8 +554,8 @@ function InlineMetric({
       className="border-border bg-card flex items-center justify-between rounded-2xl border px-4 py-3"
       data-testid={testId}
     >
-      <span className="text-sm text-muted-foreground">{label}</span>
-      <span className="font-semibold text-foreground">{value}</span>
+      <span className="text-muted-foreground text-sm">{label}</span>
+      <span className="text-foreground font-semibold">{value}</span>
     </div>
   );
 }

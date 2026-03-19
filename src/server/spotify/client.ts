@@ -188,7 +188,7 @@ export async function getPlaylistTracks(
       tracks.push({
         album: {
           id: track.album.id,
-          imageUrl: track.album.images[0]?.url ?? null,
+          imageUrl: track.album.images?.[0]?.url ?? null,
           name: track.album.name,
           releaseDate: track.album.release_date,
         },
@@ -254,6 +254,7 @@ export async function getArtistsByIds(
       }
     } catch (error) {
       console.error("Spotify artist enrichment failed", {
+        artistIds: batch,
         batchSize: batch.length,
         error,
       });

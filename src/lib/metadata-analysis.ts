@@ -524,10 +524,11 @@ function buildReleaseProfile(releaseYears: number[]): ChipmapReleaseProfile {
   }
 
   const sortedYears = [...releaseYears].sort((left, right) => left - right);
+  const earliestYear = sortedYears[0]!;
+  const latestYear = sortedYears[sortedYears.length - 1]!;
   const medianYear = Math.round(percentile(sortedYears, 0.5));
-  const startDecade = Math.floor((sortedYears[0] ?? medianYear) / 10) * 10;
-  const endDecade =
-    Math.floor((sortedYears[sortedYears.length - 1] ?? medianYear) / 10) * 10;
+  const startDecade = Math.floor(earliestYear / 10) * 10;
+  const endDecade = Math.floor(latestYear / 10) * 10;
 
   const distribution: ChipmapReleaseBucket[] = [];
   for (let decade = startDecade; decade <= endDecade; decade += 10) {
@@ -544,8 +545,8 @@ function buildReleaseProfile(releaseYears: number[]): ChipmapReleaseProfile {
 
   return {
     distribution,
-    earliestYear: sortedYears[0] ?? null,
-    latestYear: sortedYears[sortedYears.length - 1] ?? null,
+    earliestYear,
+    latestYear,
     medianYear,
   };
 }
@@ -560,9 +561,7 @@ function buildCueMap(tracks: ChipmapManifestTrack[], era: ChipmapEra) {
       .sort((left, right) => right.score - left.score)
       .slice(0, 3);
 
-    const sourceTracks = rankedTracks
-      .map((track) => track.title)
-      .filter((value, index, list) => list.indexOf(value) === index);
+    const sourceTracks = [...new Set(rankedTracks.map((track) => track.title))];
 
     return {
       description: cue.description,
